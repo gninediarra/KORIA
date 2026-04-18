@@ -1,16 +1,29 @@
 import 'package:flutter/material.dart';
 import 'package:latlong2/latlong.dart';
 
+// ignore_for_file: avoid_dynamic_calls
+
 // ─── User ────────────────────────────────────────────────────────────────────
 
 enum UserRole {
   agriculteur,
   pecheur,
   autorite,
-  citoyen,
-}
+  citoyen;
 
-extension UserRoleExt on UserRole {
+  Color get color {
+    switch (this) {
+      case UserRole.agriculteur:
+        return const Color(0xFFBC8A5F);
+      case UserRole.pecheur:
+        return const Color(0xFF1E88E5);
+      case UserRole.autorite:
+        return const Color(0xFF8E24AA);
+      case UserRole.citoyen:
+        return const Color(0xFF00D4FF);
+    }
+  }
+
   String get label {
     switch (this) {
       case UserRole.agriculteur:
@@ -49,19 +62,6 @@ extension UserRoleExt on UserRole {
         return Icons.people;
     }
   }
-
-  Color get color {
-    switch (this) {
-      case UserRole.agriculteur:
-        return const Color(0xFFBC8A5F);
-      case UserRole.pecheur:
-        return const Color(0xFF1E88E5);
-      case UserRole.autorite:
-        return const Color(0xFF8E24AA);
-      case UserRole.citoyen:
-        return const Color(0xFF00D4FF);
-    }
-  }
 }
 
 class AppUser {
@@ -71,6 +71,8 @@ class AppUser {
   final UserRole role;
   final String? quartier;
   final String? parcelle;
+  final String? walletAddress;
+  final int ecoTokens;
 
   const AppUser({
     required this.id,
@@ -79,7 +81,23 @@ class AppUser {
     required this.role,
     this.quartier,
     this.parcelle,
+    this.walletAddress,
+    this.ecoTokens = 0,
   });
+
+  factory AppUser.fromJson(Map<String, dynamic> json) => AppUser(
+        id: json['id'] as String,
+        name: json['name'] as String,
+        email: json['email'] as String,
+        role: UserRole.values.firstWhere(
+          (e) => e.name == json['role'],
+          orElse: () => UserRole.citoyen,
+        ),
+        quartier: json['quartier'] as String?,
+        parcelle: json['parcelle'] as String?,
+        walletAddress: json['wallet_address'] as String?,
+        ecoTokens: (json['eco_tokens'] as num?)?.toInt() ?? 0,
+      );
 }
 
 // ─── Zone ────────────────────────────────────────────────────────────────────
@@ -119,6 +137,14 @@ class SoilReadings {
     required this.contamination,
     required this.etat,
   });
+
+  factory SoilReadings.fromJson(Map<String, dynamic> json) => SoilReadings(
+        salinite: (json['salinite'] as num?)?.toDouble() ?? 0.0,
+        ph: (json['ph'] as num?)?.toDouble() ?? 7.0,
+        humidite: (json['humidite'] as num?)?.toDouble() ?? 0.0,
+        contamination: ((json['contamination'] as num?)?.toDouble() ?? 0.0) * 100,
+        etat: json['etat'] as String? ?? '',
+      );
 }
 
 class WaterReadings {
@@ -135,6 +161,14 @@ class WaterReadings {
     required this.temperature,
     required this.etat,
   });
+
+  factory WaterReadings.fromJson(Map<String, dynamic> json) => WaterReadings(
+        turbidite: (json['turbidite'] as num?)?.toDouble() ?? 0.0,
+        ph: (json['ph'] as num?)?.toDouble() ?? 7.0,
+        phosphates: (json['phosphates'] as num?)?.toDouble() ?? 0.0,
+        temperature: (json['temperature'] as num?)?.toDouble() ?? 20.0,
+        etat: json['etat'] as String? ?? '',
+      );
 }
 
 class AirReadings {
@@ -153,6 +187,15 @@ class AirReadings {
     required this.aqi,
     required this.etat,
   });
+
+  factory AirReadings.fromJson(Map<String, dynamic> json) => AirReadings(
+        so2: (json['so2'] as num?)?.toDouble() ?? 0.0,
+        h2s: (json['h2s'] as num?)?.toDouble() ?? 0.0,
+        nh3: (json['nh3'] as num?)?.toDouble() ?? 0.0,
+        pm25: (json['pm25'] as num?)?.toDouble() ?? 0.0,
+        aqi: (json['aqi'] as num?)?.toInt() ?? 0,
+        etat: json['etat'] as String? ?? '',
+      );
 }
 
 class Zone {
@@ -181,6 +224,43 @@ class Zone {
     required this.recommandations,
     required this.derniereAnalyse,
   });
+
+  factory Zone.fromJson(Map<String, dynamic> json) {
+    final rawPolygon = json['polygon'] as List?;
+    final polygon = rawPolygon
+            ?.map((p) => LatLng(
+                  (p['lat'] as num).toDouble(),
+                  (p['lng'] as num).toDouble(),
+                ))
+            .toList() ??
+        <LatLng>[];
+
+    return Zone(
+      id: json['id'] as String,
+      name: json['name'] as String,
+      type: ZoneType.values.firstWhere(
+        (e) => e.name == json['type'],
+        orElse: () => ZoneType.urbain,
+      ),
+      status: json['status'] as String? ?? 'vert',
+      center: LatLng(
+        (json['center_lat'] as num).toDouble(),
+        (json['center_lng'] as num).toDouble(),
+      ),
+      polygon: polygon,
+      soil: SoilReadings.fromJson(
+          json['sol'] as Map<String, dynamic>? ?? {}),
+      water: WaterReadings.fromJson(
+          json['water'] as Map<String, dynamic>? ?? {}),
+      air: AirReadings.fromJson(
+          json['air'] as Map<String, dynamic>? ?? {}),
+      recommandations:
+          (json['recommandations'] as List?)?.cast<String>() ?? [],
+      derniereAnalyse:
+          DateTime.tryParse(json['derniere_analyse'] as String? ?? '') ??
+              DateTime.now(),
+    );
+  }
 }
 
 // ─── Alert ───────────────────────────────────────────────────────────────────
@@ -244,6 +324,29 @@ class DroneAlert {
     required this.recommandations,
     this.lue = false,
   });
+
+  factory DroneAlert.fromJson(Map<String, dynamic> json) => DroneAlert(
+        id: json['id'] as String,
+        titre: json['titre'] as String,
+        description: json['description'] as String,
+        severite: AlertSeverity.values.firstWhere(
+          (e) => e.name == json['severite'],
+          orElse: () => AlertSeverity.info,
+        ),
+        rolesTarget: (json['roles_target'] as List)
+            .map((r) => UserRole.values.firstWhere(
+                  (e) => e.name == r,
+                  orElse: () => UserRole.citoyen,
+                ))
+            .toList(),
+        zone: json['zone_name'] as String,
+        timestamp:
+            DateTime.tryParse(json['timestamp'] as String? ?? '') ??
+                DateTime.now(),
+        recommandations:
+            (json['recommandations'] as List?)?.cast<String>() ?? [],
+        lue: false,
+      );
 
   DroneAlert copyWith({bool? lue}) => DroneAlert(
         id: id,

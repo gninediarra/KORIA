@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(flutter analyze *)",
+      "Read(//d/h12/gabeseye-backend/app/services/**)",
+      "Read(//d/h12/gabeseye-backend/app/schemas/**)"
+    ]
+  }
+}

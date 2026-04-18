@@ -70,7 +70,104 @@ class AppColors {
   }
 }
 
+/// Theme-aware colors. Use [AdaptiveColors.of(context)] inside build methods.
+class AdaptiveColors {
+  final bool _dark;
+  AdaptiveColors._(this._dark);
+
+  static AdaptiveColors of(BuildContext context) =>
+      AdaptiveColors._(Theme.of(context).brightness == Brightness.dark);
+
+  Color get bg => _dark ? AppColors.bg : const Color(0xFFF0F4F8);
+  Color get surface => _dark ? AppColors.surface : Colors.white;
+  Color get card => _dark ? AppColors.card : Colors.white;
+  Color get cardBorder => _dark ? AppColors.cardBorder : const Color(0xFFDDE5EF);
+  Color get textPrimary => _dark ? AppColors.textPrimary : const Color(0xFF0A1929);
+  Color get textSecondary => _dark ? AppColors.textSecondary : const Color(0xFF546E8A);
+  Color get textHint => _dark ? AppColors.textHint : const Color(0xFF8BA4BC);
+  Color get divider => _dark ? AppColors.divider : const Color(0xFFDDE5EF);
+}
+
 class AppTheme {
+  static ThemeData get lightTheme {
+    SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
+      statusBarColor: Colors.transparent,
+      statusBarIconBrightness: Brightness.dark,
+    ));
+
+    final base = ThemeData.light();
+    return base.copyWith(
+      scaffoldBackgroundColor: const Color(0xFFF0F4F8),
+      colorScheme: const ColorScheme.light(
+        primary: AppColors.cyan,
+        secondary: AppColors.green,
+        surface: Colors.white,
+        error: AppColors.red,
+      ),
+      textTheme: GoogleFonts.exo2TextTheme(base.textTheme).copyWith(
+        displayLarge: GoogleFonts.exo2(fontSize: 32, fontWeight: FontWeight.w800, color: const Color(0xFF0A1929)),
+        headlineLarge: GoogleFonts.exo2(fontSize: 26, fontWeight: FontWeight.w700, color: const Color(0xFF0A1929)),
+        headlineMedium: GoogleFonts.exo2(fontSize: 20, fontWeight: FontWeight.w600, color: const Color(0xFF0A1929)),
+        headlineSmall: GoogleFonts.exo2(fontSize: 17, fontWeight: FontWeight.w600, color: const Color(0xFF0A1929)),
+        titleLarge: GoogleFonts.exo2(fontSize: 16, fontWeight: FontWeight.w600, color: const Color(0xFF0A1929)),
+        titleMedium: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w500, color: const Color(0xFF0A1929)),
+        titleSmall: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w500, color: const Color(0xFF546E8A)),
+        bodyLarge: GoogleFonts.inter(fontSize: 15, color: const Color(0xFF0A1929)),
+        bodyMedium: GoogleFonts.inter(fontSize: 13, color: const Color(0xFF546E8A)),
+        bodySmall: GoogleFonts.inter(fontSize: 12, color: const Color(0xFF8BA4BC)),
+        labelLarge: GoogleFonts.exo2(fontSize: 14, fontWeight: FontWeight.w600, color: const Color(0xFF0A1929), letterSpacing: 0.5),
+      ),
+      appBarTheme: AppBarTheme(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        centerTitle: true,
+        titleTextStyle: GoogleFonts.exo2(fontSize: 17, fontWeight: FontWeight.w600, color: const Color(0xFF0A1929), letterSpacing: 0.3),
+        iconTheme: const IconThemeData(color: AppColors.cyan),
+        systemOverlayStyle: SystemUiOverlayStyle.dark,
+      ),
+      bottomNavigationBarTheme: const BottomNavigationBarThemeData(
+        backgroundColor: Colors.white,
+        selectedItemColor: AppColors.cyan,
+        unselectedItemColor: Color(0xFF8BA4BC),
+        type: BottomNavigationBarType.fixed,
+        elevation: 0,
+        selectedLabelStyle: TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
+        unselectedLabelStyle: TextStyle(fontSize: 11),
+      ),
+      cardTheme: CardThemeData(
+        color: Colors.white,
+        elevation: 0,
+        margin: EdgeInsets.zero,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: const BorderSide(color: Color(0xFFDDE5EF), width: 1),
+        ),
+      ),
+      inputDecorationTheme: InputDecorationTheme(
+        filled: true,
+        fillColor: const Color(0xFFF8FAFC),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFDDE5EF))),
+        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFDDE5EF))),
+        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.cyan, width: 1.5)),
+        labelStyle: GoogleFonts.inter(color: const Color(0xFF546E8A), fontSize: 14),
+        hintStyle: GoogleFonts.inter(color: const Color(0xFF8BA4BC), fontSize: 14),
+        prefixIconColor: const Color(0xFF8BA4BC),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      ),
+      elevatedButtonTheme: ElevatedButtonThemeData(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: AppColors.cyan,
+          foregroundColor: Colors.white,
+          elevation: 0,
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          textStyle: GoogleFonts.exo2(fontSize: 15, fontWeight: FontWeight.w700, letterSpacing: 0.5),
+        ),
+      ),
+      dividerTheme: const DividerThemeData(color: Color(0xFFDDE5EF), thickness: 1, space: 0),
+    );
+  }
+
   static ThemeData get theme {
     SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
       statusBarColor: Colors.transparent,

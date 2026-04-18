@@ -6,6 +6,7 @@ import 'package:gabeseye/theme/app_theme.dart';
 import 'package:gabeseye/models/models.dart';
 import 'package:gabeseye/providers/auth_provider.dart';
 import 'package:gabeseye/providers/app_provider.dart';
+import 'package:gabeseye/providers/locale_provider.dart';
 import 'package:gabeseye/screens/drone_status_screen.dart';
 import 'package:gabeseye/screens/alert_detail_screen.dart';
 
@@ -16,33 +17,34 @@ class HomeScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
     final app = context.watch<AppProvider>();
+    final locale = context.watch<LocaleProvider>();
+    final l = locale.t;
     final user = auth.user!;
     final alerts = app.alertsForRole(user.role).take(3).toList();
 
     return Scaffold(
-      backgroundColor: AppColors.bg,
       body: CustomScrollView(
         slivers: [
-          _buildAppBar(context, user, app),
+          _buildAppBar(context, user, app, l, locale.locale.languageCode),
           SliverPadding(
             padding: const EdgeInsets.fromLTRB(20, 0, 20, 100),
             sliver: SliverList(
               delegate: SliverChildListDelegate([
                 const SizedBox(height: 20),
-                _buildAqiCard(context, app),
+                _buildAqiCard(context, app, l),
                 const SizedBox(height: 16),
-                _buildStatRow(context, app),
+                _buildStatRow(context, app, l),
                 const SizedBox(height: 20),
                 _buildDroneCard(context, app),
                 const SizedBox(height: 20),
-                _buildSectionHeader(context, 'Alertes récentes', Icons.notifications_outlined),
+                _buildSectionHeader(context, l('home_recent_alerts'), Icons.notifications_outlined),
                 const SizedBox(height: 12),
                 if (alerts.isEmpty)
-                  _buildEmptyAlerts(context)
+                  _buildEmptyAlerts(context, l)
                 else
                   ...alerts.map((a) => _AlertTile(alert: a)),
                 const SizedBox(height: 16),
-                _buildZonesSummary(context, app),
+                _buildZonesSummary(context, app, l),
               ]),
             ),
           ),
@@ -51,22 +53,28 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  SliverAppBar _buildAppBar(BuildContext context, AppUser user, AppProvider app) {
+  SliverAppBar _buildAppBar(
+    BuildContext context,
+    AppUser user,
+    AppProvider app,
+    String Function(String) l,
+    String langCode,
+  ) {
     final now = DateTime.now();
     final greeting = now.hour < 12
-        ? 'Bonjour'
+        ? l('home_greeting_morning')
         : now.hour < 18
-            ? 'Bon après-midi'
-            : 'Bonsoir';
+            ? l('home_greeting_afternoon')
+            : l('home_greeting_evening');
+    final c = AdaptiveColors.of(context);
 
     return SliverAppBar(
       expandedHeight: 100,
       floating: true,
       snap: true,
-      backgroundColor: AppColors.surface,
       flexibleSpace: FlexibleSpaceBar(
         background: Container(
-          color: AppColors.surface,
+          color: c.surface,
           padding: const EdgeInsets.fromLTRB(20, 52, 20, 12),
           child: Row(
             children: [
@@ -80,7 +88,7 @@ class HomeScreen extends StatelessWidget {
                       style: Theme.of(context).textTheme.headlineMedium,
                     ),
                     Text(
-                      '${user.role.label} · ${DateFormat('EEEE d MMMM', 'fr').format(now)}',
+                      '${user.role.label} · ${DateFormat('EEEE d MMMM', langCode).format(now)}',
                       style: Theme.of(context).textTheme.bodyMedium,
                     ),
                   ],
@@ -92,8 +100,7 @@ class HomeScreen extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: user.role.color.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                      color: user.role.color.withValues(alpha: 0.3)),
+                  border: Border.all(color: user.role.color.withValues(alpha: 0.3)),
                 ),
                 child: Icon(user.role.icon, color: user.role.color, size: 22),
               ),
@@ -104,9 +111,12 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildAqiCard(BuildContext context, AppProvider app) {
-    final aqi = app.zones.map((z) => z.air.aqi).reduce((a, b) => a > b ? a : b);
-    final (label, color, icon) = _aqiInfo(aqi);
+  Widget _buildAqiCard(BuildContext context, AppProvider app, String Function(String) l) {
+    final c = AdaptiveColors.of(context);
+    final aqi = app.zones.isEmpty
+        ? 0
+        : app.zones.map((z) => z.air.aqi).reduce((a, b) => a > b ? a : b);
+    final (label, color, icon) = _aqiInfo(aqi, l);
 
     return Container(
       padding: const EdgeInsets.all(20),
@@ -133,11 +143,11 @@ class HomeScreen extends StatelessWidget {
                     Icon(Icons.air_rounded, color: color, size: 18),
                     const SizedBox(width: 6),
                     Text(
-                      'INDICE QUALITÉ AIR',
+                      l('home_aqi_label'),
                       style: GoogleFonts.exo2(
                         fontSize: 11,
                         fontWeight: FontWeight.w600,
-                        color: AppColors.textSecondary,
+                        color: c.textSecondary,
                         letterSpacing: 1.5,
                       ),
                     ),
@@ -200,15 +210,15 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  (String, Color, IconData) _aqiInfo(int aqi) {
-    if (aqi <= 50) return ('Excellent', AppColors.green, Icons.sentiment_very_satisfied_rounded);
-    if (aqi <= 100) return ('Modéré', AppColors.orange, Icons.sentiment_neutral_rounded);
-    if (aqi <= 150) return ('Mauvais', AppColors.orange, Icons.sentiment_dissatisfied_rounded);
-    if (aqi <= 200) return ('Très mauvais', AppColors.red, Icons.sentiment_very_dissatisfied_rounded);
-    return ('Dangereux', AppColors.red, Icons.warning_rounded);
+  (String, Color, IconData) _aqiInfo(int aqi, String Function(String) l) {
+    if (aqi <= 50) return (l('aqi_excellent'), AppColors.green, Icons.sentiment_very_satisfied_rounded);
+    if (aqi <= 100) return (l('aqi_moderate'), AppColors.orange, Icons.sentiment_neutral_rounded);
+    if (aqi <= 150) return (l('aqi_bad'), AppColors.orange, Icons.sentiment_dissatisfied_rounded);
+    if (aqi <= 200) return (l('aqi_very_bad'), AppColors.red, Icons.sentiment_very_dissatisfied_rounded);
+    return (l('aqi_dangerous'), AppColors.red, Icons.warning_rounded);
   }
 
-  Widget _buildStatRow(BuildContext context, AppProvider app) {
+  Widget _buildStatRow(BuildContext context, AppProvider app, String Function(String) l) {
     final zones = app.zones;
     final redCount = zones.where((z) => z.status == 'rouge').length;
     final orangeCount = zones.where((z) => z.status == 'orange').length;
@@ -218,25 +228,25 @@ class HomeScreen extends StatelessWidget {
       children: [
         _StatCard(
           icon: Icons.grass_rounded,
-          label: 'Sol',
-          value: '${zones.length} zones',
-          sub: '$redCount critique',
+          label: l('layer_soil'),
+          value: '${zones.length} ${l('home_zones_count')}',
+          sub: '$redCount ${l('home_critical_count')}',
           color: AppColors.soil,
         ),
         const SizedBox(width: 10),
         _StatCard(
           icon: Icons.water_rounded,
-          label: 'Eau',
-          value: '${zones.where((z) => z.water.turbidite > 30).length} alertes',
-          sub: 'Turbidité élevée',
+          label: l('layer_water'),
+          value: '${zones.where((z) => z.water.turbidite > 30).length} ${l('home_alerts_water')}',
+          sub: l('home_turbid'),
           color: AppColors.water,
         ),
         const SizedBox(width: 10),
         _StatCard(
           icon: Icons.cloud_rounded,
-          label: 'Air',
-          value: '$orangeCount zones',
-          sub: '$greenCount ok',
+          label: l('layer_air'),
+          value: '$orangeCount ${l('home_zones_count')}',
+          sub: '$greenCount ${l('home_ok')}',
           color: AppColors.air,
         ),
       ],
@@ -244,6 +254,7 @@ class HomeScreen extends StatelessWidget {
   }
 
   Widget _buildDroneCard(BuildContext context, AppProvider app) {
+    final c = AdaptiveColors.of(context);
     final t = app.telemetry;
     return GestureDetector(
       onTap: () => Navigator.push(context,
@@ -251,9 +262,9 @@ class HomeScreen extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: AppColors.card,
+          color: c.card,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: AppColors.cardBorder),
+          border: Border.all(color: c.cardBorder),
         ),
         child: Row(
           children: [
@@ -263,11 +274,9 @@ class HomeScreen extends StatelessWidget {
               decoration: BoxDecoration(
                 color: t.status.color.withValues(alpha: 0.15),
                 borderRadius: BorderRadius.circular(14),
-                border: Border.all(
-                    color: t.status.color.withValues(alpha: 0.3)),
+                border: Border.all(color: t.status.color.withValues(alpha: 0.3)),
               ),
-              child: Icon(Icons.flight_rounded,
-                  color: t.status.color, size: 26),
+              child: Icon(Icons.flight_rounded, color: t.status.color, size: 26),
             ),
             const SizedBox(width: 14),
             Expanded(
@@ -316,16 +325,14 @@ class HomeScreen extends StatelessWidget {
                 ],
               ),
             ),
-            const Icon(Icons.chevron_right_rounded,
-                color: AppColors.textHint, size: 20),
+            Icon(Icons.chevron_right_rounded, color: c.textHint, size: 20),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildSectionHeader(
-      BuildContext context, String title, IconData icon) {
+  Widget _buildSectionHeader(BuildContext context, String title, IconData icon) {
     return Row(
       children: [
         Icon(icon, color: AppColors.cyan, size: 18),
@@ -335,34 +342,36 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildEmptyAlerts(BuildContext context) {
+  Widget _buildEmptyAlerts(BuildContext context, String Function(String) l) {
+    final c = AdaptiveColors.of(context);
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: AppColors.card,
+        color: c.card,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.cardBorder),
+        border: Border.all(color: c.cardBorder),
       ),
       child: Row(
         children: [
-          const Icon(Icons.check_circle_outline_rounded,
-              color: AppColors.green, size: 24),
+          const Icon(Icons.check_circle_outline_rounded, color: AppColors.green, size: 24),
           const SizedBox(width: 12),
-          Text(
-            'Aucune alerte active pour votre zone',
-            style: Theme.of(context).textTheme.bodyMedium,
+          Expanded(
+            child: Text(
+              l('home_no_alert'),
+              style: Theme.of(context).textTheme.bodyMedium,
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildZonesSummary(BuildContext context, AppProvider app) {
+  Widget _buildZonesSummary(BuildContext context, AppProvider app, String Function(String) l) {
     final zones = app.zones;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildSectionHeader(context, 'État des zones', Icons.location_on_outlined),
+        _buildSectionHeader(context, l('home_zones_state'), Icons.location_on_outlined),
         const SizedBox(height: 12),
         ...zones.map((z) => _ZoneTile(zone: z)),
       ],
@@ -377,6 +386,7 @@ class _AqiGauge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = AdaptiveColors.of(context);
     final progress = (aqi / 400).clamp(0.0, 1.0);
     return SizedBox(
       width: 80,
@@ -390,7 +400,7 @@ class _AqiGauge extends StatelessWidget {
             child: CircularProgressIndicator(
               value: progress,
               strokeWidth: 6,
-              backgroundColor: AppColors.cardBorder,
+              backgroundColor: c.cardBorder,
               valueColor: AlwaysStoppedAnimation<Color>(color),
               strokeCap: StrokeCap.round,
             ),
@@ -426,13 +436,14 @@ class _StatCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = AdaptiveColors.of(context);
     return Expanded(
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: AppColors.card,
+          color: c.card,
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: AppColors.cardBorder),
+          border: Border.all(color: c.cardBorder),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -443,7 +454,7 @@ class _StatCard extends StatelessWidget {
               label,
               style: GoogleFonts.exo2(
                 fontSize: 11,
-                color: AppColors.textSecondary,
+                color: c.textSecondary,
                 fontWeight: FontWeight.w600,
                 letterSpacing: 1,
               ),
@@ -454,14 +465,14 @@ class _StatCard extends StatelessWidget {
               style: GoogleFonts.exo2(
                 fontSize: 13,
                 fontWeight: FontWeight.w700,
-                color: AppColors.textPrimary,
+                color: c.textPrimary,
               ),
             ),
             Text(
               sub,
               style: GoogleFonts.inter(
                 fontSize: 11,
-                color: AppColors.textSecondary,
+                color: c.textSecondary,
               ),
             ),
           ],
@@ -483,9 +494,7 @@ class _StatusDot extends StatelessWidget {
       decoration: BoxDecoration(
         color: color,
         shape: BoxShape.circle,
-        boxShadow: [
-          BoxShadow(color: color.withValues(alpha: 0.5), blurRadius: 4)
-        ],
+        boxShadow: [BoxShadow(color: color.withValues(alpha: 0.5), blurRadius: 4)],
       ),
     );
   }
@@ -499,6 +508,7 @@ class _MiniStat extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = AdaptiveColors.of(context);
     return Row(
       children: [
         Icon(icon, color: color, size: 13),
@@ -508,7 +518,7 @@ class _MiniStat extends StatelessWidget {
           style: GoogleFonts.exo2(
             fontSize: 12,
             fontWeight: FontWeight.w600,
-            color: AppColors.textSecondary,
+            color: c.textSecondary,
           ),
         ),
       ],
@@ -522,6 +532,7 @@ class _AlertTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = AdaptiveColors.of(context);
     final color = alert.severite.color;
     return GestureDetector(
       onTap: () {
@@ -535,12 +546,10 @@ class _AlertTile extends StatelessWidget {
         margin: const EdgeInsets.only(bottom: 10),
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: alert.lue ? AppColors.card : color.withValues(alpha: 0.07),
+          color: alert.lue ? c.card : color.withValues(alpha: 0.07),
           borderRadius: BorderRadius.circular(14),
           border: Border.all(
-            color: alert.lue
-                ? AppColors.cardBorder
-                : color.withValues(alpha: 0.3),
+            color: alert.lue ? c.cardBorder : color.withValues(alpha: 0.3),
           ),
         ),
         child: Row(
@@ -566,9 +575,8 @@ class _AlertTile extends StatelessWidget {
                           alert.titre,
                           style: GoogleFonts.exo2(
                             fontSize: 13,
-                            fontWeight:
-                                alert.lue ? FontWeight.w500 : FontWeight.w700,
-                            color: AppColors.textPrimary,
+                            fontWeight: alert.lue ? FontWeight.w500 : FontWeight.w700,
+                            color: c.textPrimary,
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -579,26 +587,19 @@ class _AlertTile extends StatelessWidget {
                           width: 7,
                           height: 7,
                           margin: const EdgeInsets.only(left: 6),
-                          decoration: BoxDecoration(
-                            color: color,
-                            shape: BoxShape.circle,
-                          ),
+                          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
                         ),
                     ],
                   ),
                   const SizedBox(height: 3),
                   Text(
                     alert.zone,
-                    style: GoogleFonts.inter(
-                      fontSize: 12,
-                      color: AppColors.textSecondary,
-                    ),
+                    style: GoogleFonts.inter(fontSize: 12, color: c.textSecondary),
                   ),
                 ],
               ),
             ),
-            const Icon(Icons.chevron_right_rounded,
-                color: AppColors.textHint, size: 18),
+            Icon(Icons.chevron_right_rounded, color: c.textHint, size: 18),
           ],
         ),
       ),
@@ -612,14 +613,15 @@ class _ZoneTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = AdaptiveColors.of(context);
     final color = AppColors.statusColor(zone.status);
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
-        color: AppColors.card,
+        color: c.card,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.cardBorder),
+        border: Border.all(color: c.cardBorder),
       ),
       child: Row(
         children: [
@@ -629,10 +631,7 @@ class _ZoneTile extends StatelessWidget {
             decoration: BoxDecoration(
               color: color,
               shape: BoxShape.circle,
-              boxShadow: [
-                BoxShadow(
-                    color: color.withValues(alpha: 0.4), blurRadius: 6)
-              ],
+              boxShadow: [BoxShadow(color: color.withValues(alpha: 0.4), blurRadius: 6)],
             ),
           ),
           const SizedBox(width: 12),
@@ -641,7 +640,7 @@ class _ZoneTile extends StatelessWidget {
               zone.name,
               style: GoogleFonts.inter(
                 fontSize: 13,
-                color: AppColors.textPrimary,
+                color: c.textPrimary,
                 fontWeight: FontWeight.w500,
               ),
             ),

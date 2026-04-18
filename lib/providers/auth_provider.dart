@@ -1,80 +1,67 @@
 import 'package:flutter/foundation.dart';
 import 'package:gabeseye/models/models.dart';
+import 'package:gabeseye/services/api_service.dart';
 
 class AuthProvider extends ChangeNotifier {
   AppUser? _user;
-  bool _isLoading = false;
-  String? _error;
+  bool     _isLoading = false;
+  String?  _error;
 
-  AppUser? get user => _user;
-  bool get isLoading => _isLoading;
-  String? get error => _error;
-  bool get isAuthenticated => _user != null;
+  AppUser? get user        => _user;
+  bool     get isLoading   => _isLoading;
+  String?  get error       => _error;
+  bool     get isAuthenticated => _user != null;
 
-  static const Map<UserRole, AppUser> _demoUsers = {
-    UserRole.agriculteur: AppUser(
-      id: 'u1',
-      name: 'Ahmed Ben Salah',
-      email: 'ahmed.bensalah@gabeseye.tn',
-      role: UserRole.agriculteur,
-      parcelle: 'Bahria Nord — Lot 12',
-    ),
-    UserRole.pecheur: AppUser(
-      id: 'u2',
-      name: 'Mohamed Trabelsi',
-      email: 'm.trabelsi@gabeseye.tn',
-      role: UserRole.pecheur,
-      quartier: 'Port de Gabès',
-    ),
-    UserRole.autorite: AppUser(
-      id: 'u3',
-      name: 'Inspecteur Karim Gharbi',
-      email: 'k.gharbi@anpe.tn',
-      role: UserRole.autorite,
-      quartier: 'Direction Régionale ANPE',
-    ),
-    UserRole.citoyen: AppUser(
-      id: 'u4',
-      name: 'Fatima Mansouri',
-      email: 'f.mansouri@gabeseye.tn',
-      role: UserRole.citoyen,
-      quartier: 'Quartier Jara',
-    ),
-  };
+  // ── Login ─────────────────────────────────────────────────────────────────
 
-  Future<bool> login(String email, String password, UserRole role) async {
+  Future<bool> login(String email, String password) async {
     _isLoading = true;
-    _error = null;
+    _error     = null;
     notifyListeners();
 
-    await Future.delayed(const Duration(milliseconds: 1500));
+    final result = await ApiService.login(email, password);
 
-    if (password.length < 4) {
-      _error = 'Mot de passe incorrect';
-      _isLoading = false;
+    _isLoading = false;
+
+    if (result == null || result.containsKey('network_error')) {
+      _error = 'Serveur indisponible. Vérifiez votre connexion et réessayez.';
       notifyListeners();
       return false;
     }
 
-    _user = _demoUsers[role]!.copyWith(email: email.isEmpty ? _demoUsers[role]!.email : email);
-    _isLoading = false;
+    if (result.containsKey('error')) {
+      _error = result['error'] as String;
+      notifyListeners();
+      return false;
+    }
+
+    ApiService.setToken(result['access_token'] as String);
+    _user = AppUser.fromJson(result['user'] as Map<String, dynamic>);
     notifyListeners();
     return true;
   }
 
+  // ── Refresh user from backend ─────────────────────────────────────────────
+
+  Future<void> refreshUser() async {
+    final data = await ApiService.getMe();
+    if (data != null) {
+      _user = AppUser.fromJson(data);
+      notifyListeners();
+    }
+  }
+
+  // ── Logout ────────────────────────────────────────────────────────────────
+
   void logout() {
-    _user = null;
+    ApiService.setToken(null);
+    _user  = null;
+    _error = null;
     notifyListeners();
   }
-}
 
-extension AppUserCopyWith on AppUser {
-  AppUser copyWith({String? email}) => AppUser(
-        id: id,
-        name: name,
-        email: email ?? this.email,
-        role: role,
-        quartier: quartier,
-        parcelle: parcelle,
-      );
+  void clearError() {
+    _error = null;
+    notifyListeners();
+  }
 }

@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
 import 'package:gabeseye/theme/app_theme.dart';
+import 'package:gabeseye/providers/theme_provider.dart';
+import 'package:gabeseye/providers/locale_provider.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -10,44 +13,47 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
-  bool _darkMode = true;
   bool _autoRefresh = true;
   bool _soundAlerts = true;
   bool _vibration = true;
   bool _locationAccess = true;
   double _refreshInterval = 5;
-  String _language = 'Français';
   String _mapStyle = 'Standard';
 
   @override
   Widget build(BuildContext context) {
+    final theme = context.watch<ThemeProvider>();
+    final locale = context.watch<LocaleProvider>();
+    final l = locale.t;
+
     return Scaffold(
-      backgroundColor: AppColors.bg,
-      appBar: AppBar(title: const Text('Paramètres')),
+      appBar: AppBar(title: Text(l('settings_title'))),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(20, 16, 20, 80),
         children: [
           _buildSection(
             context,
-            'Apparence',
+            l('settings_appearance'),
             Icons.palette_outlined,
             [
               _buildToggle(
-                'Mode sombre',
-                'Interface optimisée pour la nuit',
-                _darkMode,
-                (v) => setState(() => _darkMode = v),
+                l('settings_dark_mode'),
+                l('settings_dark_mode_sub'),
+                theme.isDark,
+                (_) => theme.toggle(),
               ),
               _buildDivider(),
               _buildDropdownTile(
-                'Langue',
-                _language,
-                ['Français', 'العربية', 'English'],
-                (v) => setState(() => _language = v!),
+                l('settings_language'),
+                locale.currentName,
+                LocaleProvider.langNames,
+                (v) {
+                  if (v != null) locale.setByName(v);
+                },
               ),
               _buildDivider(),
               _buildDropdownTile(
-                'Style de carte',
+                l('settings_map_style'),
                 _mapStyle,
                 ['Standard', 'Satellite', 'Sombre'],
                 (v) => setState(() => _mapStyle = v!),
@@ -57,19 +63,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
           const SizedBox(height: 20),
           _buildSection(
             context,
-            'Données & Synchronisation',
+            l('settings_data'),
             Icons.sync_outlined,
             [
               _buildToggle(
-                'Actualisation automatique',
-                'Mise à jour des données en temps réel',
+                l('settings_auto_refresh'),
+                l('settings_auto_refresh_sub'),
                 _autoRefresh,
                 (v) => setState(() => _autoRefresh = v),
               ),
               _buildDivider(),
               _buildSliderTile(
-                'Intervalle d\'actualisation',
-                '${_refreshInterval.toInt()} secondes',
+                l('settings_interval'),
+                '${_refreshInterval.toInt()} ${l('settings_interval_unit')}',
                 _refreshInterval,
                 3,
                 30,
@@ -77,8 +83,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
               _buildDivider(),
               _buildToggle(
-                'Accès à la localisation',
-                'Afficher votre position sur la carte',
+                l('settings_location'),
+                l('settings_location_sub'),
                 _locationAccess,
                 (v) => setState(() => _locationAccess = v),
               ),
@@ -87,19 +93,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
           const SizedBox(height: 20),
           _buildSection(
             context,
-            'Notifications & Alertes',
+            l('settings_notif'),
             Icons.notifications_outlined,
             [
               _buildToggle(
-                'Sons d\'alerte',
-                'Activer les sons pour les alertes critiques',
+                l('settings_sound'),
+                l('settings_sound_sub'),
                 _soundAlerts,
                 (v) => setState(() => _soundAlerts = v),
               ),
               _buildDivider(),
               _buildToggle(
-                'Vibration',
-                'Vibrer lors des nouvelles alertes',
+                l('settings_vibration'),
+                l('settings_vibration_sub'),
                 _vibration,
                 (v) => setState(() => _vibration = v),
               ),
@@ -108,7 +114,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           const SizedBox(height: 20),
           _buildSection(
             context,
-            'À propos',
+            l('settings_about'),
             Icons.info_outline_rounded,
             [
               _buildInfoTile('Version', '1.0.0 (Build 42)'),
@@ -117,13 +123,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
               _buildDivider(),
               _buildInfoTile('Dernière mise à jour', '17 Avril 2026'),
               _buildDivider(),
-              _buildInfoTile('Backend', 'Non connecté — mode démo'),
-              _buildDivider(),
               _buildInfoTile('ANPE Gabès', 'Partenaire institutionnel'),
             ],
           ),
           const SizedBox(height: 20),
-          _buildDangerZone(context),
+          _buildDangerZone(context, l),
         ],
       ),
     );
@@ -135,6 +139,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     IconData icon,
     List<Widget> children,
   ) {
+    final c = AdaptiveColors.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -147,7 +152,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               style: GoogleFonts.exo2(
                 fontSize: 11,
                 fontWeight: FontWeight.w700,
-                color: AppColors.textSecondary,
+                color: c.textSecondary,
                 letterSpacing: 1.5,
               ),
             ),
@@ -156,9 +161,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
         const SizedBox(height: 10),
         Container(
           decoration: BoxDecoration(
-            color: AppColors.card,
+            color: c.card,
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: AppColors.cardBorder),
+            border: Border.all(color: c.cardBorder),
           ),
           child: Column(children: children),
         ),
@@ -176,28 +181,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  label,
-                  style: GoogleFonts.inter(
-                    fontSize: 14,
-                    color: AppColors.textPrimary,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                Text(
-                  sub,
-                  style: GoogleFonts.inter(
-                    fontSize: 12,
-                    color: AppColors.textSecondary,
-                  ),
-                ),
+                Text(label,
+                    style: GoogleFonts.inter(
+                        fontSize: 14,
+                        color: AppColors.textPrimary,
+                        fontWeight: FontWeight.w500)),
+                Text(sub,
+                    style: GoogleFonts.inter(
+                        fontSize: 12, color: AppColors.textSecondary)),
               ],
             ),
           ),
           Switch(
             value: value,
             onChanged: onChanged,
-            activeColor: AppColors.cyan,
+            activeThumbColor: AppColors.cyan,
             inactiveThumbColor: AppColors.textHint,
             inactiveTrackColor: AppColors.cardBorder,
           ),
@@ -216,24 +214,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
       child: Row(
         children: [
           Expanded(
-            child: Text(
-              label,
-              style: GoogleFonts.inter(
-                fontSize: 14,
-                color: AppColors.textPrimary,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
+            child: Text(label,
+                style: GoogleFonts.inter(
+                    fontSize: 14,
+                    color: AppColors.textPrimary,
+                    fontWeight: FontWeight.w500)),
           ),
           DropdownButton<String>(
             value: value,
             dropdownColor: AppColors.card,
             underline: const SizedBox.shrink(),
             style: GoogleFonts.inter(
-              fontSize: 14,
-              color: AppColors.cyan,
-              fontWeight: FontWeight.w600,
-            ),
+                fontSize: 14,
+                color: AppColors.cyan,
+                fontWeight: FontWeight.w600),
             items: options
                 .map((o) => DropdownMenuItem(value: o, child: Text(o)))
                 .toList(),
@@ -244,14 +238,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Widget _buildSliderTile(
-    String label,
-    String valueLabel,
-    double value,
-    double min,
-    double max,
-    void Function(double) onChanged,
-  ) {
+  Widget _buildSliderTile(String label, String valueLabel, double value,
+      double min, double max, void Function(double) onChanged) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 10, 16, 4),
       child: Column(
@@ -260,22 +248,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                label,
-                style: GoogleFonts.inter(
-                  fontSize: 14,
-                  color: AppColors.textPrimary,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-              Text(
-                valueLabel,
-                style: GoogleFonts.exo2(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.cyan,
-                ),
-              ),
+              Text(label,
+                  style: GoogleFonts.inter(
+                      fontSize: 14,
+                      color: AppColors.textPrimary,
+                      fontWeight: FontWeight.w500)),
+              Text(valueLabel,
+                  style: GoogleFonts.exo2(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.cyan)),
             ],
           ),
           Slider(
@@ -298,33 +280,23 @@ class _SettingsScreenState extends State<SettingsScreen> {
       child: Row(
         children: [
           Expanded(
-            child: Text(
-              label,
+              child: Text(label,
+                  style: GoogleFonts.inter(
+                      fontSize: 14,
+                      color: AppColors.textPrimary,
+                      fontWeight: FontWeight.w500))),
+          Text(value,
               style: GoogleFonts.inter(
-                fontSize: 14,
-                color: AppColors.textPrimary,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ),
-          Text(
-            value,
-            style: GoogleFonts.inter(
-              fontSize: 13,
-              color: AppColors.textSecondary,
-            ),
-          ),
+                  fontSize: 13, color: AppColors.textSecondary)),
         ],
       ),
     );
   }
 
-  Widget _buildDivider() {
-    return const Divider(
-        height: 0, indent: 16, endIndent: 16);
-  }
+  Widget _buildDivider() =>
+      const Divider(height: 0, indent: 16, endIndent: 16);
 
-  Widget _buildDangerZone(BuildContext context) {
+  Widget _buildDangerZone(BuildContext context, String Function(String) l) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -340,35 +312,28 @@ class _SettingsScreenState extends State<SettingsScreen> {
               const Icon(Icons.warning_amber_rounded,
                   color: AppColors.red, size: 18),
               const SizedBox(width: 8),
-              Text(
-                'ZONE CRITIQUE',
-                style: GoogleFonts.exo2(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.red,
-                  letterSpacing: 1.5,
-                ),
-              ),
+              Text(l('settings_danger_zone'),
+                  style: GoogleFonts.exo2(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.red,
+                      letterSpacing: 1.5)),
             ],
           ),
           const SizedBox(height: 12),
           SizedBox(
             width: double.infinity,
             child: OutlinedButton.icon(
-              onPressed: () => _showResetDialog(context),
+              onPressed: () => _showResetDialog(context, l),
               icon: const Icon(Icons.delete_outline_rounded,
                   color: AppColors.red, size: 18),
-              label: Text(
-                'Réinitialiser les données locales',
-                style: GoogleFonts.inter(
-                  fontSize: 14,
-                  color: AppColors.red,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
+              label: Text(l('settings_reset'),
+                  style: GoogleFonts.inter(
+                      fontSize: 14,
+                      color: AppColors.red,
+                      fontWeight: FontWeight.w500)),
               style: OutlinedButton.styleFrom(
-                side: const BorderSide(
-                    color: AppColors.red, width: 1),
+                side: const BorderSide(color: AppColors.red, width: 1),
                 padding: const EdgeInsets.symmetric(vertical: 12),
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12)),
@@ -380,7 +345,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  void _showResetDialog(BuildContext context) {
+  void _showResetDialog(BuildContext context, String Function(String) l) {
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
@@ -389,45 +354,36 @@ class _SettingsScreenState extends State<SettingsScreen> {
           borderRadius: BorderRadius.circular(16),
           side: const BorderSide(color: AppColors.cardBorder),
         ),
-        title: Text(
-          'Réinitialiser ?',
-          style: Theme.of(context).textTheme.headlineSmall,
-        ),
+        title: Text('Réinitialiser ?',
+            style: Theme.of(context).textTheme.headlineSmall),
         content: Text(
-          'Cette action supprimera toutes les données locales. Les données du serveur ne seront pas affectées.',
+          'Cette action supprimera toutes les données locales.',
           style: Theme.of(context).textTheme.bodyMedium,
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text(
-              'Annuler',
-              style: GoogleFonts.inter(color: AppColors.textSecondary),
-            ),
+            child: Text(l('cancel'),
+                style:
+                    GoogleFonts.inter(color: AppColors.textSecondary)),
           ),
           TextButton(
             onPressed: () {
               Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(
-                    'Données réinitialisées',
-                    style: GoogleFonts.inter(color: AppColors.textPrimary),
-                  ),
-                  backgroundColor: AppColors.card,
-                  behavior: SnackBarBehavior.floating,
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10)),
-                ),
-              );
+              ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                content: Text(l('reset_done'),
+                    style:
+                        GoogleFonts.inter(color: AppColors.textPrimary)),
+                backgroundColor: AppColors.card,
+                behavior: SnackBarBehavior.floating,
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10)),
+              ));
             },
-            child: Text(
-              'Réinitialiser',
-              style: GoogleFonts.inter(
-                color: AppColors.red,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
+            child: Text(l('confirm_reset'),
+                style: GoogleFonts.inter(
+                    color: AppColors.red,
+                    fontWeight: FontWeight.w600)),
           ),
         ],
       ),

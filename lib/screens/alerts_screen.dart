@@ -6,6 +6,7 @@ import 'package:gabeseye/theme/app_theme.dart';
 import 'package:gabeseye/models/models.dart';
 import 'package:gabeseye/providers/auth_provider.dart';
 import 'package:gabeseye/providers/app_provider.dart';
+import 'package:gabeseye/providers/locale_provider.dart';
 import 'package:gabeseye/screens/alert_detail_screen.dart';
 
 class AlertsScreen extends StatefulWidget {
@@ -22,7 +23,10 @@ class _AlertsScreenState extends State<AlertsScreen> {
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
     final app = context.watch<AppProvider>();
+    final locale = context.watch<LocaleProvider>();
     final user = auth.user!;
+    final l = locale.t;
+    final c = AdaptiveColors.of(context);
 
     var alerts = app.alertsForRole(user.role);
     if (_filter != null) {
@@ -32,19 +36,17 @@ class _AlertsScreenState extends State<AlertsScreen> {
     final unread = alerts.where((a) => !a.lue).length;
 
     return Scaffold(
-      backgroundColor: AppColors.bg,
       appBar: AppBar(
         title: Column(
           children: [
-            const Text('Alertes'),
+            Text(l('alerts_title')),
             if (unread > 0)
               Text(
-                '$unread non lues',
+                '$unread ${l('alerts_unread')}',
                 style: GoogleFonts.inter(
-                  fontSize: 11,
-                  color: AppColors.red,
-                  fontWeight: FontWeight.w500,
-                ),
+                    fontSize: 11,
+                    color: AppColors.red,
+                    fontWeight: FontWeight.w500),
               ),
           ],
         ),
@@ -53,22 +55,21 @@ class _AlertsScreenState extends State<AlertsScreen> {
             TextButton(
               onPressed: () => app.markAllAsRead(user.role),
               child: Text(
-                'Tout lire',
+                l('alerts_mark_all'),
                 style: GoogleFonts.inter(
-                  fontSize: 13,
-                  color: AppColors.cyan,
-                  fontWeight: FontWeight.w600,
-                ),
+                    fontSize: 13,
+                    color: AppColors.cyan,
+                    fontWeight: FontWeight.w600),
               ),
             ),
         ],
       ),
       body: Column(
         children: [
-          _buildFilterBar(),
+          _buildFilterBar(c, l),
           Expanded(
             child: alerts.isEmpty
-                ? _buildEmpty()
+                ? _buildEmpty(l)
                 : ListView.builder(
                     padding: const EdgeInsets.fromLTRB(20, 12, 20, 100),
                     itemCount: alerts.length,
@@ -79,8 +80,7 @@ class _AlertsScreenState extends State<AlertsScreen> {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (_) =>
-                                AlertDetailScreen(alert: alerts[i]),
+                            builder: (_) => AlertDetailScreen(alert: alerts[i]),
                           ),
                         );
                       },
@@ -92,52 +92,50 @@ class _AlertsScreenState extends State<AlertsScreen> {
     );
   }
 
-  Widget _buildFilterBar() {
+  Widget _buildFilterBar(AdaptiveColors c, String Function(String) l) {
     return Container(
-      color: AppColors.surface,
+      color: c.surface,
       padding: const EdgeInsets.fromLTRB(20, 8, 20, 12),
       child: Row(
         children: [
           _FilterChip(
-            label: 'Tout',
+            label: l('alerts_all'),
             active: _filter == null,
             color: AppColors.cyan,
             onTap: () => setState(() => _filter = null),
           ),
           const SizedBox(width: 8),
           _FilterChip(
-            label: 'Critique',
+            label: l('alerts_critical'),
             active: _filter == AlertSeverity.critique,
             color: AppColors.red,
-            onTap: () => setState(() => _filter = _filter == AlertSeverity.critique
-                ? null
-                : AlertSeverity.critique),
+            onTap: () => setState(() => _filter =
+                _filter == AlertSeverity.critique ? null : AlertSeverity.critique),
           ),
           const SizedBox(width: 8),
           _FilterChip(
-            label: 'Avert.',
+            label: l('alerts_warning'),
             active: _filter == AlertSeverity.avertissement,
             color: AppColors.orange,
-            onTap: () => setState(
-              () => _filter = _filter == AlertSeverity.avertissement
-                  ? null
-                  : AlertSeverity.avertissement,
-            ),
+            onTap: () => setState(() => _filter =
+                _filter == AlertSeverity.avertissement
+                    ? null
+                    : AlertSeverity.avertissement),
           ),
           const SizedBox(width: 8),
           _FilterChip(
-            label: 'Info',
+            label: l('alerts_info'),
             active: _filter == AlertSeverity.info,
             color: AppColors.cyan,
-            onTap: () => setState(() => _filter =
-                _filter == AlertSeverity.info ? null : AlertSeverity.info),
+            onTap: () => setState(() =>
+                _filter = _filter == AlertSeverity.info ? null : AlertSeverity.info),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildEmpty() {
+  Widget _buildEmpty(String Function(String) l) {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -145,10 +143,8 @@ class _AlertsScreenState extends State<AlertsScreen> {
           const Icon(Icons.notifications_off_outlined,
               color: AppColors.textHint, size: 52),
           const SizedBox(height: 16),
-          Text(
-            'Aucune alerte pour ce filtre',
-            style: Theme.of(context).textTheme.bodyMedium,
-          ),
+          Text(l('alerts_empty'),
+              style: Theme.of(context).textTheme.bodyMedium),
         ],
       ),
     );
@@ -161,34 +157,32 @@ class _FilterChip extends StatelessWidget {
   final Color color;
   final VoidCallback onTap;
 
-  const _FilterChip({
-    required this.label,
-    required this.active,
-    required this.color,
-    required this.onTap,
-  });
+  const _FilterChip(
+      {required this.label,
+      required this.active,
+      required this.color,
+      required this.onTap});
 
   @override
   Widget build(BuildContext context) {
+    final c = AdaptiveColors.of(context);
     return GestureDetector(
       onTap: onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 180),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
         decoration: BoxDecoration(
-          color: active ? color.withValues(alpha: 0.15) : AppColors.card,
+          color: active ? color.withValues(alpha: 0.15) : c.card,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: active ? color.withValues(alpha: 0.5) : AppColors.cardBorder,
-          ),
+              color: active ? color.withValues(alpha: 0.5) : c.cardBorder),
         ),
         child: Text(
           label,
           style: GoogleFonts.exo2(
-            fontSize: 12,
-            fontWeight: FontWeight.w600,
-            color: active ? color : AppColors.textSecondary,
-          ),
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: active ? color : c.textSecondary),
         ),
       ),
     );
@@ -203,19 +197,17 @@ class _AlertCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = AdaptiveColors.of(context);
     final color = alert.severite.color;
     return GestureDetector(
       onTap: onTap,
       child: Container(
         margin: const EdgeInsets.only(bottom: 12),
         decoration: BoxDecoration(
-          color: alert.lue ? AppColors.card : color.withValues(alpha: 0.06),
+          color: alert.lue ? c.card : color.withValues(alpha: 0.06),
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: alert.lue
-                ? AppColors.cardBorder
-                : color.withValues(alpha: 0.35),
-          ),
+              color: alert.lue ? c.cardBorder : color.withValues(alpha: 0.35)),
         ),
         child: Column(
           children: [
@@ -250,11 +242,10 @@ class _AlertCard extends StatelessWidget {
                               child: Text(
                                 alert.severite.label.toUpperCase(),
                                 style: GoogleFonts.exo2(
-                                  fontSize: 9,
-                                  fontWeight: FontWeight.w700,
-                                  color: color,
-                                  letterSpacing: 0.8,
-                                ),
+                                    fontSize: 9,
+                                    fontWeight: FontWeight.w700,
+                                    color: color,
+                                    letterSpacing: 0.8),
                               ),
                             ),
                             const Spacer(),
@@ -263,9 +254,7 @@ class _AlertCard extends StatelessWidget {
                                 width: 8,
                                 height: 8,
                                 decoration: BoxDecoration(
-                                  color: color,
-                                  shape: BoxShape.circle,
-                                ),
+                                    color: color, shape: BoxShape.circle),
                               ),
                           ],
                         ),
@@ -273,22 +262,18 @@ class _AlertCard extends StatelessWidget {
                         Text(
                           alert.titre,
                           style: GoogleFonts.exo2(
-                            fontSize: 14,
-                            fontWeight: alert.lue
-                                ? FontWeight.w500
-                                : FontWeight.w700,
-                            color: AppColors.textPrimary,
-                            height: 1.3,
-                          ),
+                              fontSize: 14,
+                              fontWeight: alert.lue
+                                  ? FontWeight.w500
+                                  : FontWeight.w700,
+                              color: c.textPrimary,
+                              height: 1.3),
                         ),
                         const SizedBox(height: 4),
                         Text(
                           alert.description,
                           style: GoogleFonts.inter(
-                            fontSize: 12,
-                            color: AppColors.textSecondary,
-                            height: 1.4,
-                          ),
+                              fontSize: 12, color: c.textSecondary, height: 1.4),
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -300,32 +285,24 @@ class _AlertCard extends StatelessWidget {
             ),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-              decoration: const BoxDecoration(
-                border: Border(top: BorderSide(color: AppColors.divider)),
-              ),
+              decoration:
+                  BoxDecoration(border: Border(top: BorderSide(color: c.divider))),
               child: Row(
                 children: [
-                  const Icon(Icons.location_on_outlined,
-                      color: AppColors.textHint, size: 14),
+                  Icon(Icons.location_on_outlined, color: c.textHint, size: 14),
                   const SizedBox(width: 4),
                   Expanded(
-                    child: Text(
-                      alert.zone,
-                      style: GoogleFonts.inter(
-                          fontSize: 12, color: AppColors.textHint),
-                    ),
+                    child: Text(alert.zone,
+                        style: GoogleFonts.inter(
+                            fontSize: 12, color: c.textHint)),
                   ),
-                  const Icon(Icons.schedule_outlined,
-                      color: AppColors.textHint, size: 14),
+                  Icon(Icons.schedule_outlined, color: c.textHint, size: 14),
                   const SizedBox(width: 4),
-                  Text(
-                    _formatTime(alert.timestamp),
-                    style: GoogleFonts.inter(
-                        fontSize: 12, color: AppColors.textHint),
-                  ),
+                  Text(_formatTime(alert.timestamp),
+                      style:
+                          GoogleFonts.inter(fontSize: 12, color: c.textHint)),
                   const SizedBox(width: 8),
-                  const Icon(Icons.chevron_right_rounded,
-                      color: AppColors.textHint, size: 16),
+                  Icon(Icons.chevron_right_rounded, color: c.textHint, size: 16),
                 ],
               ),
             ),

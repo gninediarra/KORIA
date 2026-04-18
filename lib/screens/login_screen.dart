@@ -4,7 +4,9 @@ import 'package:provider/provider.dart';
 import 'package:gabeseye/theme/app_theme.dart';
 import 'package:gabeseye/models/models.dart';
 import 'package:gabeseye/providers/auth_provider.dart';
+import 'package:gabeseye/providers/app_provider.dart';
 import 'package:gabeseye/screens/main_navigation.dart';
+import 'package:gabeseye/screens/register_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -45,14 +47,15 @@ class _LoginScreenState extends State<LoginScreen>
     final ok = await auth.login(
       _emailCtrl.text.trim(),
       _passCtrl.text,
-      _selectedRole,
     );
     if (ok && mounted) {
+      // Charge les données réelles depuis le backend (async, sans bloquer la nav)
+      context.read<AppProvider>().loadFromApi();
       Navigator.of(context).pushReplacement(
         PageRouteBuilder(
-          pageBuilder: (_, __, ___) => const MainNavigation(),
+          pageBuilder: (_, _, _) => const MainNavigation(),
           transitionDuration: const Duration(milliseconds: 500),
-          transitionsBuilder: (_, anim, __, child) => SlideTransition(
+          transitionsBuilder: (_, anim, _, child) => SlideTransition(
             position: Tween<Offset>(
               begin: const Offset(1.0, 0),
               end: Offset.zero,
@@ -67,10 +70,10 @@ class _LoginScreenState extends State<LoginScreen>
   void _quickLogin(UserRole role) {
     setState(() => _selectedRole = role);
     final demos = {
-      UserRole.agriculteur: ('ahmed.bensalah@gabeseye.tn', 'demo123'),
-      UserRole.pecheur: ('m.trabelsi@gabeseye.tn', 'demo123'),
-      UserRole.autorite: ('k.gharbi@anpe.tn', 'demo123'),
-      UserRole.citoyen: ('f.mansouri@gabeseye.tn', 'demo123'),
+      UserRole.agriculteur: ('ahmed@gabeseye.tn', 'demo1234'),
+      UserRole.pecheur: ('fatma@gabeseye.tn', 'demo1234'),
+      UserRole.autorite: ('samir@gabeseye.tn', 'demo1234'),
+      UserRole.citoyen: ('manel@gabeseye.tn', 'demo1234'),
     };
     _emailCtrl.text = demos[role]!.$1;
     _passCtrl.text = demos[role]!.$2;
@@ -79,7 +82,6 @@ class _LoginScreenState extends State<LoginScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.bg,
       body: FadeTransition(
         opacity: _fadeAnim,
         child: SafeArea(
@@ -96,6 +98,8 @@ class _LoginScreenState extends State<LoginScreen>
                 _buildFormFields(),
                 const SizedBox(height: 20),
                 _buildLoginButton(),
+                const SizedBox(height: 16),
+                _buildRegisterLink(),
                 const SizedBox(height: 28),
                 _buildQuickAccess(),
                 const SizedBox(height: 32),
@@ -108,15 +112,16 @@ class _LoginScreenState extends State<LoginScreen>
   }
 
   Widget _buildHeader() {
+    final c = AdaptiveColors.of(context);
     return Row(
       children: [
         Container(
           width: 48,
           height: 48,
           decoration: BoxDecoration(
-            color: AppColors.card,
+            color: c.card,
             borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: AppColors.cardBorder),
+            border: Border.all(color: c.cardBorder),
             boxShadow: [
               BoxShadow(
                 color: AppColors.cyan.withValues(alpha: 0.15),
@@ -231,7 +236,7 @@ class _LoginScreenState extends State<LoginScreen>
           ),
         ),
         Consumer<AuthProvider>(
-          builder: (_, auth, __) {
+          builder: (_, auth, _) {
             if (auth.error == null) return const SizedBox.shrink();
             return Padding(
               padding: const EdgeInsets.only(top: 10),
@@ -246,9 +251,11 @@ class _LoginScreenState extends State<LoginScreen>
                   children: [
                     const Icon(Icons.error_outline, color: AppColors.red, size: 16),
                     const SizedBox(width: 8),
-                    Text(auth.error!,
-                        style: const TextStyle(
-                            color: AppColors.red, fontSize: 13)),
+                    Expanded(
+                      child: Text(auth.error!,
+                          style: const TextStyle(
+                              color: AppColors.red, fontSize: 13)),
+                    ),
                   ],
                 ),
               ),
@@ -261,7 +268,7 @@ class _LoginScreenState extends State<LoginScreen>
 
   Widget _buildLoginButton() {
     return Consumer<AuthProvider>(
-      builder: (_, auth, __) => SizedBox(
+      builder: (_, auth, _) => SizedBox(
         width: double.infinity,
         height: 52,
         child: ElevatedButton(
@@ -298,6 +305,33 @@ class _LoginScreenState extends State<LoginScreen>
                 ),
         ),
       ),
+    );
+  }
+
+  Widget _buildRegisterLink() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Text(
+          'Pas encore de compte ?',
+          style: GoogleFonts.inter(fontSize: 13, color: AppColors.textSecondary),
+        ),
+        TextButton(
+          onPressed: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const RegisterScreen()),
+          ),
+          style: TextButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 8)),
+          child: Text(
+            'S\'inscrire',
+            style: GoogleFonts.exo2(
+              fontSize: 13,
+              fontWeight: FontWeight.w700,
+              color: AppColors.cyan,
+            ),
+          ),
+        ),
+      ],
     );
   }
 

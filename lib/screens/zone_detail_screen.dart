@@ -30,25 +30,21 @@ class _ZoneDetailScreenState extends State<ZoneDetailScreen>
 
   @override
   Widget build(BuildContext context) {
+    final c = AdaptiveColors.of(context);
     final zone = widget.zone;
     final statusColor = AppColors.statusColor(zone.status);
 
     return Scaffold(
-      backgroundColor: AppColors.bg,
       body: NestedScrollView(
-        headerSliverBuilder: (_, __) => [
+        headerSliverBuilder: (_, _) => [
           SliverAppBar(
-            expandedHeight: 130,
+            expandedHeight: 185,
             pinned: true,
-            backgroundColor: AppColors.surface,
             flexibleSpace: FlexibleSpaceBar(
               background: Container(
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
-                    colors: [
-                      statusColor.withValues(alpha: 0.2),
-                      AppColors.surface,
-                    ],
+                    colors: [statusColor.withValues(alpha: 0.2), c.surface],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   ),
@@ -60,13 +56,11 @@ class _ZoneDetailScreenState extends State<ZoneDetailScreen>
                     Row(
                       children: [
                         Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 10, vertical: 4),
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                           decoration: BoxDecoration(
                             color: statusColor.withValues(alpha: 0.15),
                             borderRadius: BorderRadius.circular(20),
-                            border: Border.all(
-                                color: statusColor.withValues(alpha: 0.4)),
+                            border: Border.all(color: statusColor.withValues(alpha: 0.4)),
                           ),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
@@ -75,9 +69,7 @@ class _ZoneDetailScreenState extends State<ZoneDetailScreen>
                                 width: 7,
                                 height: 7,
                                 decoration: BoxDecoration(
-                                  color: statusColor,
-                                  shape: BoxShape.circle,
-                                ),
+                                    color: statusColor, shape: BoxShape.circle),
                               ),
                               const SizedBox(width: 5),
                               Text(
@@ -94,27 +86,21 @@ class _ZoneDetailScreenState extends State<ZoneDetailScreen>
                         ),
                         const SizedBox(width: 8),
                         Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 10, vertical: 4),
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                           decoration: BoxDecoration(
-                            color: AppColors.card,
+                            color: c.card,
                             borderRadius: BorderRadius.circular(20),
                           ),
                           child: Text(
                             zone.type.label,
                             style: GoogleFonts.inter(
-                              fontSize: 11,
-                              color: AppColors.textSecondary,
-                            ),
+                                fontSize: 11, color: c.textSecondary),
                           ),
                         ),
                       ],
                     ),
                     const SizedBox(height: 6),
-                    Text(
-                      zone.name,
-                      style: Theme.of(context).textTheme.headlineMedium,
-                    ),
+                    Text(zone.name, style: Theme.of(context).textTheme.headlineMedium),
                     Text(
                       'Analysé ${DateFormat('d MMM à HH:mm', 'fr').format(zone.derniereAnalyse)}',
                       style: Theme.of(context).textTheme.bodyMedium,
@@ -127,24 +113,12 @@ class _ZoneDetailScreenState extends State<ZoneDetailScreen>
               controller: _tabCtrl,
               indicatorColor: AppColors.cyan,
               labelColor: AppColors.cyan,
-              unselectedLabelColor: AppColors.textSecondary,
-              labelStyle: GoogleFonts.exo2(
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-              ),
+              unselectedLabelColor: c.textSecondary,
+              labelStyle: GoogleFonts.exo2(fontSize: 13, fontWeight: FontWeight.w600),
               tabs: [
-                Tab(
-                  icon: Icon(Icons.grass_rounded, size: 16, color: AppColors.soil),
-                  text: 'Sol',
-                ),
-                Tab(
-                  icon: Icon(Icons.water_rounded, size: 16, color: AppColors.water),
-                  text: 'Eau',
-                ),
-                Tab(
-                  icon: Icon(Icons.air_rounded, size: 16, color: AppColors.air),
-                  text: 'Air',
-                ),
+                Tab(icon: Icon(Icons.grass_rounded, size: 16, color: AppColors.soil), text: 'Sol'),
+                Tab(icon: Icon(Icons.water_rounded, size: 16, color: AppColors.water), text: 'Eau'),
+                Tab(icon: Icon(Icons.air_rounded, size: 16, color: AppColors.air), text: 'Air'),
               ],
             ),
           ),
@@ -301,6 +275,7 @@ class _ReadingCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = AdaptiveColors.of(context);
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
@@ -327,15 +302,13 @@ class _ReadingCard extends StatelessWidget {
                 Text(title,
                     style: GoogleFonts.exo2(
                         fontSize: 12,
-                        color: AppColors.textSecondary,
+                        color: c.textSecondary,
                         fontWeight: FontWeight.w600,
                         letterSpacing: 0.5)),
                 const SizedBox(height: 3),
                 Text(content,
                     style: GoogleFonts.inter(
-                        fontSize: 13,
-                        color: AppColors.textPrimary,
-                        fontWeight: FontWeight.w500)),
+                        fontSize: 13, color: c.textPrimary, fontWeight: FontWeight.w500)),
               ],
             ),
           ),
@@ -355,30 +328,24 @@ class _MetricCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = AdaptiveColors.of(context);
     return Expanded(
       child: Container(
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: AppColors.card,
+          color: c.card,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: AppColors.cardBorder),
+          border: Border.all(color: c.cardBorder),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              label,
-              style: GoogleFonts.inter(
-                  fontSize: 12, color: AppColors.textSecondary),
-            ),
+            Text(label, style: GoogleFonts.inter(fontSize: 12, color: c.textSecondary)),
             const SizedBox(height: 6),
             Text(
               value,
               style: GoogleFonts.exo2(
-                fontSize: 16,
-                fontWeight: FontWeight.w700,
-                color: color,
-              ),
+                  fontSize: 16, fontWeight: FontWeight.w700, color: color),
             ),
           ],
         ),
@@ -396,6 +363,7 @@ class _ProgressBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = AdaptiveColors.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -404,14 +372,10 @@ class _ProgressBar extends StatelessWidget {
           children: [
             Text(label,
                 style: GoogleFonts.exo2(
-                    fontSize: 13,
-                    color: AppColors.textSecondary,
-                    fontWeight: FontWeight.w600)),
+                    fontSize: 13, color: c.textSecondary, fontWeight: FontWeight.w600)),
             Text('${(value * 100).toInt()}%',
                 style: GoogleFonts.exo2(
-                    fontSize: 13,
-                    color: color,
-                    fontWeight: FontWeight.w700)),
+                    fontSize: 13, color: color, fontWeight: FontWeight.w700)),
           ],
         ),
         const SizedBox(height: 8),
@@ -419,7 +383,7 @@ class _ProgressBar extends StatelessWidget {
           borderRadius: BorderRadius.circular(6),
           child: LinearProgressIndicator(
             value: value,
-            backgroundColor: AppColors.cardBorder,
+            backgroundColor: c.cardBorder,
             valueColor: AlwaysStoppedAnimation<Color>(color),
             minHeight: 8,
           ),
@@ -435,6 +399,7 @@ class _AqiBigCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = AdaptiveColors.of(context);
     final color = aqi > 200
         ? AppColors.red
         : aqi > 100
@@ -444,7 +409,7 @@ class _AqiBigCard extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [color.withValues(alpha: 0.12), AppColors.card],
+          colors: [color.withValues(alpha: 0.12), c.card],
         ),
         borderRadius: BorderRadius.circular(14),
         border: Border.all(color: color.withValues(alpha: 0.3)),
@@ -454,10 +419,7 @@ class _AqiBigCard extends StatelessWidget {
           Text(
             '$aqi',
             style: GoogleFonts.exo2(
-              fontSize: 48,
-              fontWeight: FontWeight.w800,
-              color: color,
-            ),
+                fontSize: 48, fontWeight: FontWeight.w800, color: color),
           ),
           const SizedBox(width: 14),
           Column(
@@ -465,9 +427,7 @@ class _AqiBigCard extends StatelessWidget {
             children: [
               Text('AQI',
                   style: GoogleFonts.exo2(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.textSecondary)),
+                      fontSize: 14, fontWeight: FontWeight.w700, color: c.textSecondary)),
               Text(
                 aqi > 200
                     ? 'Dangereux'
@@ -478,15 +438,11 @@ class _AqiBigCard extends StatelessWidget {
                             : aqi > 50
                                 ? 'Modéré'
                                 : 'Excellent',
-                style: GoogleFonts.inter(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: color),
+                style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600, color: color),
               ),
               Text(
                 'Indice de qualité de l\'air',
-                style: GoogleFonts.inter(
-                    fontSize: 12, color: AppColors.textHint),
+                style: GoogleFonts.inter(fontSize: 12, color: c.textHint),
               ),
             ],
           ),
@@ -502,25 +458,22 @@ class _RecommendationsCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = AdaptiveColors.of(context);
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.card,
+        color: c.card,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.cardBorder),
+        border: Border.all(color: c.cardBorder),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              const Icon(Icons.lightbulb_outline_rounded,
-                  color: AppColors.cyan, size: 18),
+              const Icon(Icons.lightbulb_outline_rounded, color: AppColors.cyan, size: 18),
               const SizedBox(width: 8),
-              Text(
-                'Recommandations IA',
-                style: Theme.of(context).textTheme.headlineSmall,
-              ),
+              Text('Recommandations IA', style: Theme.of(context).textTheme.headlineSmall),
             ],
           ),
           const SizedBox(height: 12),
@@ -542,10 +495,9 @@ class _RecommendationsCard extends StatelessWidget {
                           child: Text(
                             '${e.key + 1}',
                             style: GoogleFonts.exo2(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w700,
-                              color: AppColors.cyan,
-                            ),
+                                fontSize: 11,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.cyan),
                           ),
                         ),
                       ),
@@ -554,10 +506,7 @@ class _RecommendationsCard extends StatelessWidget {
                         child: Text(
                           e.value,
                           style: GoogleFonts.inter(
-                            fontSize: 13,
-                            color: AppColors.textPrimary,
-                            height: 1.5,
-                          ),
+                              fontSize: 13, color: c.textPrimary, height: 1.5),
                         ),
                       ),
                     ],

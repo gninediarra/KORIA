@@ -5,6 +5,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:gabeseye/theme/app_theme.dart';
 import 'package:gabeseye/models/models.dart';
 import 'package:gabeseye/providers/app_provider.dart';
+import 'package:gabeseye/providers/locale_provider.dart';
 import 'package:gabeseye/data/mock_data.dart';
 
 class ReportsScreen extends StatefulWidget {
@@ -33,33 +34,31 @@ class _ReportsScreenState extends State<ReportsScreen>
   @override
   Widget build(BuildContext context) {
     final app = context.watch<AppProvider>();
+    final locale = context.watch<LocaleProvider>();
+    final l = locale.t;
 
     return Scaffold(
-      backgroundColor: AppColors.bg,
       appBar: AppBar(
-        title: const Text('Rapports & Statistiques'),
+        title: Text(l('reports_title')),
         bottom: TabBar(
           controller: _tabs,
           indicatorColor: AppColors.cyan,
           labelColor: AppColors.cyan,
-          unselectedLabelColor: AppColors.textSecondary,
-          labelStyle: GoogleFonts.exo2(
-            fontSize: 13,
-            fontWeight: FontWeight.w600,
-          ),
-          tabs: const [
-            Tab(text: 'Qualité Air'),
-            Tab(text: 'Contamination'),
-            Tab(text: 'Synthèse'),
+          unselectedLabelColor: AdaptiveColors.of(context).textSecondary,
+          labelStyle: GoogleFonts.exo2(fontSize: 13, fontWeight: FontWeight.w600),
+          tabs: [
+            Tab(text: l('reports_tab_air')),
+            Tab(text: l('reports_tab_contamination')),
+            Tab(text: l('reports_tab_summary')),
           ],
         ),
       ),
       body: TabBarView(
         controller: _tabs,
         children: [
-          _AqiTab(),
-          _ContaminationTab(app: app),
-          _SummaryTab(app: app),
+          _AqiTab(l: l),
+          _ContaminationTab(app: app, l: l),
+          _SummaryTab(app: app, l: l),
         ],
       ),
     );
@@ -67,36 +66,33 @@ class _ReportsScreenState extends State<ReportsScreen>
 }
 
 class _AqiTab extends StatelessWidget {
+  final String Function(String) l;
+  const _AqiTab({required this.l});
+
   @override
   Widget build(BuildContext context) {
+    final c = AdaptiveColors.of(context);
     final data = MockData.aqiHistory;
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(20, 20, 20, 80),
       children: [
-        _buildHeader(context, 'Évolution AQI — 7 derniers jours',
-            Icons.show_chart_rounded),
+        _buildHeader(context, l('reports_aqi_evolution'), Icons.show_chart_rounded),
         const SizedBox(height: 16),
         Container(
           height: 220,
           padding: const EdgeInsets.fromLTRB(8, 20, 16, 8),
           decoration: BoxDecoration(
-            color: AppColors.card,
+            color: c.card,
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: AppColors.cardBorder),
+            border: Border.all(color: c.cardBorder),
           ),
           child: LineChart(
             LineChartData(
               gridData: FlGridData(
                 show: true,
-                getDrawingHorizontalLine: (_) => FlLine(
-                  color: AppColors.divider,
-                  strokeWidth: 1,
-                ),
-                getDrawingVerticalLine: (_) => FlLine(
-                  color: AppColors.divider,
-                  strokeWidth: 0.5,
-                ),
+                getDrawingHorizontalLine: (_) => FlLine(color: c.divider, strokeWidth: 1),
+                getDrawingVerticalLine: (_) => FlLine(color: c.divider, strokeWidth: 0.5),
               ),
               titlesData: FlTitlesData(
                 leftTitles: AxisTitles(
@@ -105,10 +101,7 @@ class _AqiTab extends StatelessWidget {
                     reservedSize: 36,
                     getTitlesWidget: (v, _) => Text(
                       v.toInt().toString(),
-                      style: GoogleFonts.exo2(
-                        fontSize: 10,
-                        color: AppColors.textHint,
-                      ),
+                      style: GoogleFonts.exo2(fontSize: 10, color: c.textHint),
                     ),
                   ),
                 ),
@@ -117,24 +110,20 @@ class _AqiTab extends StatelessWidget {
                     showTitles: true,
                     getTitlesWidget: (v, _) {
                       final i = v.toInt();
-                      if (i < 0 || i >= data.length) {
-                        return const SizedBox.shrink();
-                      }
+                      if (i < 0 || i >= data.length) return const SizedBox.shrink();
                       return Text(
                         data[i]['jour'] as String,
                         style: GoogleFonts.exo2(
                           fontSize: 10,
-                          color: AppColors.textSecondary,
+                          color: c.textSecondary,
                           fontWeight: FontWeight.w600,
                         ),
                       );
                     },
                   ),
                 ),
-                rightTitles: const AxisTitles(
-                    sideTitles: SideTitles(showTitles: false)),
-                topTitles: const AxisTitles(
-                    sideTitles: SideTitles(showTitles: false)),
+                rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
               ),
               borderData: FlBorderData(show: false),
               minX: 0,
@@ -146,9 +135,7 @@ class _AqiTab extends StatelessWidget {
                   spots: data
                       .asMap()
                       .entries
-                      .map((e) => FlSpot(
-                          e.key.toDouble(),
-                          (e.value['aqi'] as int).toDouble()))
+                      .map((e) => FlSpot(e.key.toDouble(), (e.value['aqi'] as int).toDouble()))
                       .toList(),
                   isCurved: true,
                   color: AppColors.cyan,
@@ -156,7 +143,7 @@ class _AqiTab extends StatelessWidget {
                   isStrokeCapRound: true,
                   dotData: FlDotData(
                     show: true,
-                    getDotPainter: (spot, _, __, ___) {
+                    getDotPainter: (spot, _, _, _) {
                       final aqi = spot.y.toInt();
                       final color = aqi > 200
                           ? AppColors.red
@@ -166,7 +153,7 @@ class _AqiTab extends StatelessWidget {
                       return FlDotCirclePainter(
                         radius: 5,
                         color: color,
-                        strokeColor: AppColors.bg,
+                        strokeColor: c.bg,
                         strokeWidth: 2,
                       );
                     },
@@ -192,37 +179,36 @@ class _AqiTab extends StatelessWidget {
         const SizedBox(height: 12),
         Row(
           children: [
-            _Legend(AppColors.cyan, 'Indice AQI'),
+            _Legend(AppColors.cyan, l('reports_aqi_legend')),
             const SizedBox(width: 16),
-            _Legend(AppColors.orange, 'Seuil (100)'),
+            _Legend(AppColors.orange, l('reports_threshold')),
           ],
         ),
         const SizedBox(height: 20),
-        _buildAqiScale(context),
+        _buildAqiScale(context, c),
       ],
     );
   }
 
-  Widget _buildAqiScale(BuildContext context) {
+  Widget _buildAqiScale(BuildContext context, AdaptiveColors c) {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: AppColors.card,
+        color: c.card,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.cardBorder),
+        border: Border.all(color: c.cardBorder),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Échelle AQI',
-              style: Theme.of(context).textTheme.headlineSmall),
+          Text(l('reports_aqi_scale'), style: Theme.of(context).textTheme.headlineSmall),
           const SizedBox(height: 12),
           ...[
-            ('0–50', 'Excellent', AppColors.green),
-            ('51–100', 'Modéré', AppColors.orange),
-            ('101–150', 'Mauvais pour groupes sensibles', AppColors.orange),
-            ('151–200', 'Mauvais', AppColors.red),
-            ('200+', 'Dangereux', AppColors.red),
+            ('0–50', l('aqi_excellent'), AppColors.green),
+            ('51–100', l('aqi_moderate'), AppColors.orange),
+            ('101–150', l('aqi_sensitive'), AppColors.orange),
+            ('151–200', l('aqi_bad'), AppColors.red),
+            ('200+', l('aqi_dangerous'), AppColors.red),
           ].map(
             (e) => Padding(
               padding: const EdgeInsets.only(bottom: 8),
@@ -230,8 +216,7 @@ class _AqiTab extends StatelessWidget {
                 children: [
                   Container(
                     width: 54,
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 6, vertical: 3),
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
                     decoration: BoxDecoration(
                       color: e.$3.withValues(alpha: 0.12),
                       borderRadius: BorderRadius.circular(6),
@@ -239,19 +224,15 @@ class _AqiTab extends StatelessWidget {
                     child: Text(
                       e.$1,
                       style: GoogleFonts.exo2(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w700,
-                        color: e.$3,
-                      ),
+                          fontSize: 11, fontWeight: FontWeight.w700, color: e.$3),
                       textAlign: TextAlign.center,
                     ),
                   ),
                   const SizedBox(width: 10),
-                  Text(
-                    e.$2,
-                    style: GoogleFonts.inter(
-                      fontSize: 13,
-                      color: AppColors.textPrimary,
+                  Expanded(
+                    child: Text(
+                      e.$2,
+                      style: GoogleFonts.inter(fontSize: 13, color: c.textPrimary),
                     ),
                   ),
                 ],
@@ -266,25 +247,27 @@ class _AqiTab extends StatelessWidget {
 
 class _ContaminationTab extends StatelessWidget {
   final AppProvider app;
-  const _ContaminationTab({required this.app});
+  final String Function(String) l;
+  const _ContaminationTab({required this.app, required this.l});
 
   @override
   Widget build(BuildContext context) {
+    final c = AdaptiveColors.of(context);
     final data = MockData.contaminationByZone;
     final zones = app.zones;
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(20, 20, 20, 80),
       children: [
-        _buildHeader(context, 'Contamination par zone', Icons.bar_chart_rounded),
+        _buildHeader(context, l('reports_contamination'), Icons.bar_chart_rounded),
         const SizedBox(height: 16),
         Container(
           height: 240,
           padding: const EdgeInsets.fromLTRB(8, 20, 16, 8),
           decoration: BoxDecoration(
-            color: AppColors.card,
+            color: c.card,
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: AppColors.cardBorder),
+            border: Border.all(color: c.cardBorder),
           ),
           child: BarChart(
             BarChartData(
@@ -298,10 +281,7 @@ class _ContaminationTab extends StatelessWidget {
                     reservedSize: 30,
                     getTitlesWidget: (v, _) => Text(
                       '${v.toInt()}',
-                      style: GoogleFonts.exo2(
-                        fontSize: 9,
-                        color: AppColors.textHint,
-                      ),
+                      style: GoogleFonts.exo2(fontSize: 9, color: c.textHint),
                     ),
                   ),
                 ),
@@ -310,16 +290,14 @@ class _ContaminationTab extends StatelessWidget {
                     showTitles: true,
                     getTitlesWidget: (v, _) {
                       final i = v.toInt();
-                      if (i < 0 || i >= data.length) {
-                        return const SizedBox.shrink();
-                      }
+                      if (i < 0 || i >= data.length) return const SizedBox.shrink();
                       return Padding(
                         padding: const EdgeInsets.only(top: 4),
                         child: Text(
                           data[i]['zone'] as String,
                           style: GoogleFonts.exo2(
                             fontSize: 9,
-                            color: AppColors.textSecondary,
+                            color: c.textSecondary,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
@@ -327,19 +305,13 @@ class _ContaminationTab extends StatelessWidget {
                     },
                   ),
                 ),
-                rightTitles: const AxisTitles(
-                    sideTitles: SideTitles(showTitles: false)),
-                topTitles: const AxisTitles(
-                    sideTitles: SideTitles(showTitles: false)),
+                rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
               ),
               gridData: FlGridData(
                 show: true,
-                getDrawingHorizontalLine: (_) => FlLine(
-                  color: AppColors.divider,
-                  strokeWidth: 0.8,
-                ),
-                getDrawingVerticalLine: (_) =>
-                    FlLine(color: Colors.transparent),
+                getDrawingHorizontalLine: (_) => FlLine(color: c.divider, strokeWidth: 0.8),
+                getDrawingVerticalLine: (_) => FlLine(color: Colors.transparent),
               ),
               borderData: FlBorderData(show: false),
               barGroups: data.asMap().entries.map((e) {
@@ -356,12 +328,11 @@ class _ContaminationTab extends StatelessWidget {
                       toY: val,
                       color: color,
                       width: 20,
-                      borderRadius: const BorderRadius.vertical(
-                          top: Radius.circular(6)),
+                      borderRadius: const BorderRadius.vertical(top: Radius.circular(6)),
                       backDrawRodData: BackgroundBarChartRodData(
                         show: true,
                         toY: 100,
-                        color: AppColors.cardBorder,
+                        color: c.cardBorder,
                       ),
                     ),
                   ],
@@ -379,10 +350,12 @@ class _ContaminationTab extends StatelessWidget {
 
 class _SummaryTab extends StatelessWidget {
   final AppProvider app;
-  const _SummaryTab({required this.app});
+  final String Function(String) l;
+  const _SummaryTab({required this.app, required this.l});
 
   @override
   Widget build(BuildContext context) {
+    final c = AdaptiveColors.of(context);
     final zones = app.zones;
     final rouge = zones.where((z) => z.status == 'rouge').length;
     final orange = zones.where((z) => z.status == 'orange').length;
@@ -391,14 +364,14 @@ class _SummaryTab extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.fromLTRB(20, 20, 20, 80),
       children: [
-        _buildHeader(context, 'Synthèse générale', Icons.pie_chart_outline_rounded),
+        _buildHeader(context, l('reports_summary'), Icons.pie_chart_outline_rounded),
         const SizedBox(height: 16),
         Container(
           height: 240,
           decoration: BoxDecoration(
-            color: AppColors.card,
+            color: c.card,
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: AppColors.cardBorder),
+            border: Border.all(color: c.cardBorder),
           ),
           child: Row(
             children: [
@@ -414,10 +387,7 @@ class _SummaryTab extends StatelessWidget {
                         title: '$rouge',
                         radius: 50,
                         titleStyle: GoogleFonts.exo2(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w800,
-                          color: Colors.white,
-                        ),
+                            fontSize: 14, fontWeight: FontWeight.w800, color: Colors.white),
                       ),
                       PieChartSectionData(
                         value: orange.toDouble(),
@@ -425,10 +395,7 @@ class _SummaryTab extends StatelessWidget {
                         title: '$orange',
                         radius: 50,
                         titleStyle: GoogleFonts.exo2(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w800,
-                          color: Colors.white,
-                        ),
+                            fontSize: 14, fontWeight: FontWeight.w800, color: Colors.white),
                       ),
                       PieChartSectionData(
                         value: vert.toDouble(),
@@ -436,10 +403,7 @@ class _SummaryTab extends StatelessWidget {
                         title: '$vert',
                         radius: 50,
                         titleStyle: GoogleFonts.exo2(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w800,
-                          color: Colors.white,
-                        ),
+                            fontSize: 14, fontWeight: FontWeight.w800, color: Colors.white),
                       ),
                     ],
                   ),
@@ -451,11 +415,11 @@ class _SummaryTab extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _PieLegend(AppColors.red, 'Critique', '$rouge zones'),
+                    _PieLegend(AppColors.red, l('reports_pie_critical'), '$rouge ${l('reports_zones')}'),
                     const SizedBox(height: 12),
-                    _PieLegend(AppColors.orange, 'Surveillance', '$orange zones'),
+                    _PieLegend(AppColors.orange, l('reports_pie_watch'), '$orange ${l('reports_zones')}'),
                     const SizedBox(height: 12),
-                    _PieLegend(AppColors.green, 'Normal', '$vert zones'),
+                    _PieLegend(AppColors.green, l('reports_pie_normal'), '$vert ${l('reports_zones')}'),
                   ],
                 ),
               ),
@@ -463,53 +427,56 @@ class _SummaryTab extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 20),
-        _buildKpiGrid(context, zones.length, rouge, orange),
+        _buildKpiGrid(context, zones.length, rouge),
         const SizedBox(height: 20),
-        _buildLastScanCard(context),
+        _buildLastScanCard(context, c),
       ],
     );
   }
 
-  Widget _buildKpiGrid(BuildContext context, int total, int rouge, int orange) {
+  Widget _buildKpiGrid(BuildContext context, int total, int rouge) {
     return Row(
       children: [
-        _KpiCard('Zones totales', '$total', AppColors.cyan),
+        _KpiCard(l('reports_total_zones'), '$total', AppColors.cyan),
         const SizedBox(width: 12),
-        _KpiCard('Alertes actives',
+        _KpiCard(
+            l('reports_active_alerts'),
             '${MockData.alerts.where((a) => a.severite == AlertSeverity.critique).length}',
             AppColors.red),
         const SizedBox(width: 12),
-        _KpiCard('Missions drone', '14', AppColors.green),
+        _KpiCard(l('reports_drone_missions'), '14', AppColors.green),
       ],
     );
   }
 
-  Widget _buildLastScanCard(BuildContext context) {
+  Widget _buildLastScanCard(BuildContext context, AdaptiveColors c) {
+    final ago = l('reports_ago');
+    String timeAgo(String duration) =>
+        ago.isEmpty ? duration : '$ago $duration';
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.card,
+        color: c.card,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.cardBorder),
+        border: Border.all(color: c.cardBorder),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              const Icon(Icons.history_rounded,
-                  color: AppColors.cyan, size: 18),
+              const Icon(Icons.history_rounded, color: AppColors.cyan, size: 18),
               const SizedBox(width: 8),
-              Text('Dernières analyses',
-                  style: Theme.of(context).textTheme.headlineSmall),
+              Text(l('reports_last_scans'), style: Theme.of(context).textTheme.headlineSmall),
             ],
           ),
           const SizedBox(height: 12),
           ...[
-            ('Secteur GCT', 'il y a 8 min', AppColors.red),
-            ('Zone Portuaire', 'il y a 15 min', AppColors.orange),
-            ('Oasis Chenini', 'il y a 22 min', AppColors.orange),
-            ('Gabès-Ville', 'il y a 5 min', AppColors.green),
+            ('Secteur GCT', timeAgo('8 min'), AppColors.red),
+            ('Zone Portuaire', timeAgo('15 min'), AppColors.orange),
+            ('Oasis Chenini', timeAgo('22 min'), AppColors.orange),
+            ('Gabès-Ville', timeAgo('5 min'), AppColors.green),
           ].map(
             (e) => Padding(
               padding: const EdgeInsets.only(bottom: 10),
@@ -518,27 +485,18 @@ class _SummaryTab extends StatelessWidget {
                   Container(
                     width: 8,
                     height: 8,
-                    decoration: BoxDecoration(
-                      color: e.$3,
-                      shape: BoxShape.circle,
-                    ),
+                    decoration: BoxDecoration(color: e.$3, shape: BoxShape.circle),
                   ),
                   const SizedBox(width: 10),
                   Expanded(
                     child: Text(
                       e.$1,
-                      style: GoogleFonts.inter(
-                        fontSize: 13,
-                        color: AppColors.textPrimary,
-                      ),
+                      style: GoogleFonts.inter(fontSize: 13, color: c.textPrimary),
                     ),
                   ),
                   Text(
                     e.$2,
-                    style: GoogleFonts.inter(
-                      fontSize: 12,
-                      color: AppColors.textHint,
-                    ),
+                    style: GoogleFonts.inter(fontSize: 12, color: c.textHint),
                   ),
                 ],
               ),
@@ -569,21 +527,17 @@ class _Legend extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = AdaptiveColors.of(context);
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
         Container(
           width: 12,
           height: 3,
-          decoration: BoxDecoration(
-            color: color,
-            borderRadius: BorderRadius.circular(2),
-          ),
+          decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(2)),
         ),
         const SizedBox(width: 6),
-        Text(label,
-            style: GoogleFonts.inter(
-                fontSize: 12, color: AppColors.textSecondary)),
+        Text(label, style: GoogleFonts.inter(fontSize: 12, color: c.textSecondary)),
       ],
     );
   }
@@ -595,40 +549,33 @@ class _ZoneStatRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = AdaptiveColors.of(context);
     final color = AppColors.statusColor(zone.status);
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
-        color: AppColors.card,
+        color: c.card,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.cardBorder),
+        border: Border.all(color: c.cardBorder),
       ),
       child: Row(
         children: [
           Container(
             width: 10,
             height: 10,
-            decoration: BoxDecoration(
-              color: color,
-              shape: BoxShape.circle,
-            ),
+            decoration: BoxDecoration(color: color, shape: BoxShape.circle),
           ),
           const SizedBox(width: 10),
           Expanded(
             child: Text(
               zone.name,
-              style: GoogleFonts.inter(
-                  fontSize: 13, color: AppColors.textPrimary),
+              style: GoogleFonts.inter(fontSize: 13, color: c.textPrimary),
             ),
           ),
           Text(
             '${zone.soil.contamination.toInt()}%',
-            style: GoogleFonts.exo2(
-              fontSize: 13,
-              fontWeight: FontWeight.w700,
-              color: color,
-            ),
+            style: GoogleFonts.exo2(fontSize: 13, fontWeight: FontWeight.w700, color: color),
           ),
         ],
       ),
@@ -644,16 +591,14 @@ class _PieLegend extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = AdaptiveColors.of(context);
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
         Container(
           width: 12,
           height: 12,
-          decoration: BoxDecoration(
-            color: color,
-            borderRadius: BorderRadius.circular(3),
-          ),
+          decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(3)),
         ),
         const SizedBox(width: 8),
         Column(
@@ -661,12 +606,8 @@ class _PieLegend extends StatelessWidget {
           children: [
             Text(label,
                 style: GoogleFonts.exo2(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textPrimary)),
-            Text(sub,
-                style: GoogleFonts.inter(
-                    fontSize: 11, color: AppColors.textSecondary)),
+                    fontSize: 12, fontWeight: FontWeight.w600, color: c.textPrimary)),
+            Text(sub, style: GoogleFonts.inter(fontSize: 11, color: c.textSecondary)),
           ],
         ),
       ],
@@ -682,30 +623,24 @@ class _KpiCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = AdaptiveColors.of(context);
     return Expanded(
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: AppColors.card,
+          color: c.card,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: AppColors.cardBorder),
+          border: Border.all(color: c.cardBorder),
         ),
         child: Column(
           children: [
             Text(
               value,
-              style: GoogleFonts.exo2(
-                fontSize: 26,
-                fontWeight: FontWeight.w800,
-                color: color,
-              ),
+              style: GoogleFonts.exo2(fontSize: 26, fontWeight: FontWeight.w800, color: color),
             ),
             Text(
               label,
-              style: GoogleFonts.inter(
-                fontSize: 11,
-                color: AppColors.textSecondary,
-              ),
+              style: GoogleFonts.inter(fontSize: 11, color: c.textSecondary),
               textAlign: TextAlign.center,
             ),
           ],

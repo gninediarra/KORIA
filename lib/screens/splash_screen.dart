@@ -87,9 +87,9 @@ class _SplashScreenState extends State<SplashScreen>
     if (!mounted) return;
     Navigator.of(context).pushReplacement(
       PageRouteBuilder(
-        pageBuilder: (_, __, ___) => const LoginScreen(),
+        pageBuilder: (_, _, _) => const LoginScreen(),
         transitionDuration: const Duration(milliseconds: 600),
-        transitionsBuilder: (_, anim, __, child) => FadeTransition(
+        transitionsBuilder: (_, anim, _, child) => FadeTransition(
           opacity: anim,
           child: child,
         ),
@@ -113,15 +113,29 @@ class _SplashScreenState extends State<SplashScreen>
       backgroundColor: AppColors.bg,
       body: Stack(
         children: [
-          // Radial gradient background
+          // Mosque background photo
+          Positioned.fill(
+            child: Image.asset(
+              'assets/images/mosque.jpg',
+              fit: BoxFit.cover,
+              errorBuilder: (_, _, _) => const SizedBox.shrink(),
+            ),
+          ),
+
+          // Dark overlay to keep the tech atmosphere
+          Positioned.fill(
+            child: Container(color: AppColors.bg.withValues(alpha: 0.82)),
+          ),
+
+          // Subtle cyan gradient accent on top
           Container(
             decoration: BoxDecoration(
               gradient: RadialGradient(
                 center: const Alignment(0, -0.2),
                 radius: 1.2,
                 colors: [
-                  AppColors.cyan.withValues(alpha: 0.08),
-                  AppColors.bg,
+                  AppColors.cyan.withValues(alpha: 0.06),
+                  Colors.transparent,
                 ],
               ),
             ),
@@ -136,7 +150,7 @@ class _SplashScreenState extends State<SplashScreen>
           // Drone animation
           AnimatedBuilder(
             animation: _droneCtrl,
-            builder: (_, __) => Positioned(
+            builder: (_, _) => Positioned(
               left: size.width * (_droneX.value + 0.5) - 20,
               top: size.height * 0.28 + size.height * _droneY.value,
               child: Opacity(
@@ -162,7 +176,7 @@ class _SplashScreenState extends State<SplashScreen>
                     // Glowing eye icon
                     AnimatedBuilder(
                       animation: _pulse,
-                      builder: (_, __) => Container(
+                      builder: (_, _) => Container(
                         width: 88,
                         height: 88,
                         decoration: BoxDecoration(

@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import 'package:gabeseye/theme/app_theme.dart';
 import 'package:gabeseye/models/models.dart';
 import 'package:gabeseye/providers/app_provider.dart';
+import 'package:gabeseye/providers/locale_provider.dart';
 import 'package:gabeseye/screens/zone_detail_screen.dart';
 
 class MapScreen extends StatefulWidget {
@@ -21,9 +22,11 @@ class _MapScreenState extends State<MapScreen> {
   @override
   Widget build(BuildContext context) {
     final app = context.watch<AppProvider>();
+    final locale = context.watch<LocaleProvider>();
+    final c = AdaptiveColors.of(context);
+    final l = locale.t;
 
     return Scaffold(
-      backgroundColor: AppColors.bg,
       body: Stack(
         children: [
           FlutterMap(
@@ -39,19 +42,17 @@ class _MapScreenState extends State<MapScreen> {
                 urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                 userAgentPackageName: 'com.gabeseye.app',
               ),
-              // Zone polygons
               PolygonLayer(
                 polygons: app.zones
+                    .where((z) => z.polygon.isNotEmpty)
                     .map((z) => _buildPolygon(z, app.mapLayer))
                     .toList(),
               ),
-              // Zone center markers
               MarkerLayer(
                 markers: app.zones
-                    .map((z) => _buildZoneMarker(context, z))
+                    .map((z) => _buildZoneMarker(context, z, c))
                     .toList(),
               ),
-              // Drone marker
               MarkerLayer(
                 markers: [
                   Marker(
@@ -65,7 +66,6 @@ class _MapScreenState extends State<MapScreen> {
             ],
           ),
 
-          // Top overlay: title + layer toggle
           Positioned(
             top: 0,
             left: 0,
@@ -78,9 +78,9 @@ class _MapScreenState extends State<MapScreen> {
                     padding: const EdgeInsets.symmetric(
                         horizontal: 16, vertical: 10),
                     decoration: BoxDecoration(
-                      color: AppColors.surface.withValues(alpha: 0.95),
+                      color: c.surface.withValues(alpha: 0.95),
                       borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: AppColors.cardBorder),
+                      border: Border.all(color: c.cardBorder),
                     ),
                     child: Row(
                       children: [
@@ -88,12 +88,11 @@ class _MapScreenState extends State<MapScreen> {
                             color: AppColors.cyan, size: 20),
                         const SizedBox(width: 8),
                         Text(
-                          'Carte Interactive Gabès',
+                          l('map_title'),
                           style: GoogleFonts.exo2(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.textPrimary,
-                          ),
+                              fontSize: 15,
+                              fontWeight: FontWeight.w600,
+                              color: c.textPrimary),
                         ),
                         const Spacer(),
                         _LiveBadge(),
@@ -104,20 +103,19 @@ class _MapScreenState extends State<MapScreen> {
                   _LayerToggle(
                     selected: app.mapLayer,
                     onChanged: app.setMapLayer,
+                    l: l,
                   ),
                 ],
               ),
             ),
           ),
 
-          // Legend bottom-left
           Positioned(
             bottom: 90,
             left: 16,
-            child: _Legend(),
+            child: _Legend(l: l),
           ),
 
-          // Drone info bottom-right
           Positioned(
             bottom: 90,
             right: 16,
@@ -167,7 +165,7 @@ class _MapScreenState extends State<MapScreen> {
     );
   }
 
-  Marker _buildZoneMarker(BuildContext context, Zone zone) {
+  Marker _buildZoneMarker(BuildContext context, Zone zone, AdaptiveColors c) {
     final color = AppColors.statusColor(zone.status);
     return Marker(
       point: zone.center,
@@ -181,7 +179,7 @@ class _MapScreenState extends State<MapScreen> {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
           decoration: BoxDecoration(
-            color: AppColors.surface.withValues(alpha: 0.9),
+            color: c.surface.withValues(alpha: 0.9),
             borderRadius: BorderRadius.circular(8),
             border: Border.all(color: color.withValues(alpha: 0.5)),
           ),
@@ -191,20 +189,16 @@ class _MapScreenState extends State<MapScreen> {
               Container(
                 width: 7,
                 height: 7,
-                decoration: BoxDecoration(
-                  color: color,
-                  shape: BoxShape.circle,
-                ),
+                decoration: BoxDecoration(color: color, shape: BoxShape.circle),
               ),
               const SizedBox(width: 5),
               Expanded(
                 child: Text(
                   zone.name.split(' ').take(2).join(' '),
                   style: GoogleFonts.exo2(
-                    fontSize: 10,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textPrimary,
-                  ),
+                      fontSize: 10,
+                      fontWeight: FontWeight.w600,
+                      color: c.textPrimary),
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
@@ -233,9 +227,8 @@ class _DroneMarkerState extends State<_DroneMarker>
   void initState() {
     super.initState();
     _ctrl = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 900),
-    )..repeat(reverse: true);
+        vsync: this, duration: const Duration(milliseconds: 900))
+      ..repeat(reverse: true);
     _pulse = Tween<double>(begin: 0.7, end: 1.0).animate(_ctrl);
   }
 
@@ -247,9 +240,10 @@ class _DroneMarkerState extends State<_DroneMarker>
 
   @override
   Widget build(BuildContext context) {
+    final c = AdaptiveColors.of(context);
     return AnimatedBuilder(
       animation: _pulse,
-      builder: (_, __) => Stack(
+      builder: (_, _) => Stack(
         alignment: Alignment.center,
         children: [
           Container(
@@ -264,14 +258,12 @@ class _DroneMarkerState extends State<_DroneMarker>
             width: 30,
             height: 30,
             decoration: BoxDecoration(
-              color: AppColors.bg,
+              color: c.bg,
               shape: BoxShape.circle,
               border: Border.all(color: AppColors.cyan, width: 2),
               boxShadow: [
                 BoxShadow(
-                  color: AppColors.cyan.withValues(alpha: 0.4),
-                  blurRadius: 8,
-                ),
+                    color: AppColors.cyan.withValues(alpha: 0.4), blurRadius: 8)
               ],
             ),
             child: const Icon(Icons.flight_rounded,
@@ -296,9 +288,8 @@ class _LiveBadgeState extends State<_LiveBadge>
   void initState() {
     super.initState();
     _ctrl = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 800),
-    )..repeat(reverse: true);
+        vsync: this, duration: const Duration(milliseconds: 800))
+      ..repeat(reverse: true);
   }
 
   @override
@@ -311,7 +302,7 @@ class _LiveBadgeState extends State<_LiveBadge>
   Widget build(BuildContext context) {
     return AnimatedBuilder(
       animation: _ctrl,
-      builder: (_, __) => Row(
+      builder: (_, _) => Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           Container(
@@ -319,20 +310,16 @@ class _LiveBadgeState extends State<_LiveBadge>
             height: 7,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: AppColors.red
-                  .withValues(alpha: 0.5 + _ctrl.value * 0.5),
+              color: AppColors.red.withValues(alpha: 0.5 + _ctrl.value * 0.5),
             ),
           ),
           const SizedBox(width: 5),
-          Text(
-            'LIVE',
-            style: GoogleFonts.exo2(
-              fontSize: 11,
-              fontWeight: FontWeight.w700,
-              color: AppColors.red,
-              letterSpacing: 1,
-            ),
-          ),
+          Text('LIVE',
+              style: GoogleFonts.exo2(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.red,
+                  letterSpacing: 1)),
         ],
       ),
     );
@@ -342,24 +329,30 @@ class _LiveBadgeState extends State<_LiveBadge>
 class _LayerToggle extends StatelessWidget {
   final String selected;
   final void Function(String) onChanged;
+  final String Function(String) l;
 
-  const _LayerToggle({required this.selected, required this.onChanged});
+  const _LayerToggle(
+      {required this.selected, required this.onChanged, required this.l});
 
   @override
   Widget build(BuildContext context) {
+    final c = AdaptiveColors.of(context);
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
-        color: AppColors.surface.withValues(alpha: 0.95),
+        color: c.surface.withValues(alpha: 0.95),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.cardBorder),
+        border: Border.all(color: c.cardBorder),
       ),
       child: Row(
         children: [
-          _LayerBtn('sol', Icons.grass_rounded, 'Sol', AppColors.soil, selected, onChanged),
-          _LayerBtn('eau', Icons.water_rounded, 'Eau', AppColors.water, selected, onChanged),
-          _LayerBtn('air', Icons.air_rounded, 'Air', AppColors.air, selected, onChanged),
+          _LayerBtn('sol', Icons.grass_rounded, l('map_layer_soil'),
+              AppColors.soil, selected, onChanged),
+          _LayerBtn('eau', Icons.water_rounded, l('map_layer_water'),
+              AppColors.water, selected, onChanged),
+          _LayerBtn('air', Icons.air_rounded, l('map_layer_air'),
+              AppColors.air, selected, onChanged),
         ],
       ),
     );
@@ -379,6 +372,7 @@ class _LayerBtn extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = AdaptiveColors.of(context);
     final active = selected == id;
     return Expanded(
       child: GestureDetector(
@@ -389,23 +383,18 @@ class _LayerBtn extends StatelessWidget {
           decoration: BoxDecoration(
             color: active ? color.withValues(alpha: 0.15) : Colors.transparent,
             borderRadius: BorderRadius.circular(8),
-            border: active
-                ? Border.all(color: color.withValues(alpha: 0.4))
-                : null,
+            border: active ? Border.all(color: color.withValues(alpha: 0.4)) : null,
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(icon, color: active ? color : AppColors.textHint, size: 16),
+              Icon(icon, color: active ? color : c.textHint, size: 16),
               const SizedBox(width: 5),
-              Text(
-                label,
-                style: GoogleFonts.exo2(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: active ? color : AppColors.textHint,
-                ),
-              ),
+              Text(label,
+                  style: GoogleFonts.exo2(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: active ? color : c.textHint)),
             ],
           ),
         ),
@@ -415,33 +404,36 @@ class _LayerBtn extends StatelessWidget {
 }
 
 class _Legend extends StatelessWidget {
+  final String Function(String) l;
+  const _Legend({required this.l});
+
   @override
   Widget build(BuildContext context) {
+    final c = AdaptiveColors.of(context);
     return Container(
       padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
-        color: AppColors.surface.withValues(alpha: 0.92),
+        color: c.surface.withValues(alpha: 0.92),
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: AppColors.cardBorder),
+        border: Border.all(color: c.cardBorder),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
           Text(
-            'LÉGENDE',
+            l('map_legend'),
             style: GoogleFonts.exo2(
-              fontSize: 9,
-              color: AppColors.textSecondary,
-              fontWeight: FontWeight.w700,
-              letterSpacing: 1.5,
-            ),
+                fontSize: 9,
+                color: c.textSecondary,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 1.5),
           ),
           const SizedBox(height: 6),
-          _LegendItem(AppColors.red, 'Critique'),
-          _LegendItem(AppColors.orange, 'Surveillance'),
-          _LegendItem(AppColors.green, 'Normal'),
-          _LegendItem(AppColors.cyan, 'Drone GE-01'),
+          _LegendItem(AppColors.red, l('map_critical')),
+          _LegendItem(AppColors.orange, l('map_watch')),
+          _LegendItem(AppColors.green, l('map_normal')),
+          _LegendItem(AppColors.cyan, l('map_drone')),
         ],
       ),
     );
@@ -455,6 +447,7 @@ class _LegendItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = AdaptiveColors.of(context);
     return Padding(
       padding: const EdgeInsets.only(bottom: 4),
       child: Row(
@@ -470,13 +463,8 @@ class _LegendItem extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 6),
-          Text(
-            label,
-            style: GoogleFonts.inter(
-              fontSize: 11,
-              color: AppColors.textSecondary,
-            ),
-          ),
+          Text(label,
+              style: GoogleFonts.inter(fontSize: 11, color: c.textSecondary)),
         ],
       ),
     );
@@ -489,11 +477,12 @@ class _DroneMiniInfo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = AdaptiveColors.of(context);
     final t = app.telemetry;
     return Container(
       padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
-        color: AppColors.surface.withValues(alpha: 0.92),
+        color: c.surface.withValues(alpha: 0.92),
         borderRadius: BorderRadius.circular(10),
         border: Border.all(color: AppColors.cyan.withValues(alpha: 0.3)),
       ),
@@ -504,17 +493,13 @@ class _DroneMiniInfo extends StatelessWidget {
           Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.flight_rounded,
-                  color: AppColors.cyan, size: 13),
+              const Icon(Icons.flight_rounded, color: AppColors.cyan, size: 13),
               const SizedBox(width: 4),
-              Text(
-                'GE-01',
-                style: GoogleFonts.exo2(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.cyan,
-                ),
-              ),
+              Text('GE-01',
+                  style: GoogleFonts.exo2(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.cyan)),
             ],
           ),
           const SizedBox(height: 5),
@@ -534,6 +519,7 @@ class _MiniRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = AdaptiveColors.of(context);
     return Padding(
       padding: const EdgeInsets.only(bottom: 2),
       child: Row(
@@ -541,23 +527,17 @@ class _MiniRow extends StatelessWidget {
         children: [
           SizedBox(
             width: 24,
-            child: Text(
-              label,
+            child: Text(label,
+                style: GoogleFonts.exo2(
+                    fontSize: 10,
+                    color: c.textSecondary,
+                    fontWeight: FontWeight.w600)),
+          ),
+          Text(value,
               style: GoogleFonts.exo2(
-                fontSize: 10,
-                color: AppColors.textSecondary,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-          Text(
-            value,
-            style: GoogleFonts.exo2(
-              fontSize: 10,
-              color: AppColors.textPrimary,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
+                  fontSize: 10,
+                  color: c.textPrimary,
+                  fontWeight: FontWeight.w700)),
         ],
       ),
     );
