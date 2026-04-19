@@ -81,9 +81,9 @@ const MOCK_THERMAL = {
 
 // Offline fallback responses — proper UTF-8
 const MOCK_CHAT = {
-  fr: "Bonjour ! Je suis GabèsEye AI. Je fonctionne en mode hors ligne. La qualité de l'air à Gabès est préoccupante (AQI 112). Comment puis-je vous aider ?",
-  en: "Hello! I'm GabèsEye AI running in offline mode. Air quality in Gabès is concerning (AQI 112). How can I help you?",
-  ar: "مرحباً! أنا GabèsEye AI في وضع عدم الاتصال. جودة الهواء في قابس مقلقة (AQI 112). كيف يمكنني مساعدتك؟",
+  fr: "Je suis désolé, le serveur est temporairement indisponible. Veuillez réessayer dans quelques instants.",
+  en: "Sorry, the server is temporarily unavailable. Please try again in a moment.",
+  ar: "عذراً، الخادم غير متاح مؤقتاً. يرجى المحاولة مرة أخرى بعد قليل.",
 };
 
 // ── Public API ───────────────────────────────────────────────────────────────
