@@ -208,3 +208,65 @@ async def health_risk(zone_data: dict, profil: dict) -> dict:
         "response": response,
         "timestamp": datetime.utcnow().isoformat(),
     }
+
+
+async def welcome_message(role: str, langue: str, zone_data: dict) -> dict:
+    """
+    Generate a personalized welcome message using real-time sensor data.
+    Called on app open — greets the user with actual current conditions.
+    """
+    lang = SUPPORTED_LANGUAGES.get(langue, "French")
+    context = _format_context(zone_data)
+    air = zone_data.get("air", {})
+    sol = zone_data.get("sol", {})
+    meteo = zone_data.get("meteo", {})
+
+    role_label = {
+        "agriculteur": "un agriculteur",
+        "pecheur": "un pêcheur du golfe de Gabès",
+        "autorite": "une autorité environnementale",
+        "citoyen": "un citoyen de Gabès",
+    }.get(role, "un utilisateur")
+
+    agent_name = {
+        "agriculteur": "AgriBot",
+        "pecheur": "MarinBot",
+        "autorite": "AuthoBot",
+        "citoyen": "CitiBot",
+    }.get(role, "GabèsEye IA")
+
+    system = (
+        f"Tu es {agent_name}, assistant IA GabèsEye pour la surveillance environnementale à Gabès, Tunisie. "
+        f"Tu parles à {role_label}. Réponds uniquement en {lang}."
+    )
+
+    prompt = (
+        f"Données en temps réel: {context}"
+        f"{f' | Météo: {meteo.get(\"temperature\",\"?\")}°C, vent {meteo.get(\"vent\",\"?\")} km/h' if meteo else ''}\n\n"
+        f"Présente-toi, mentionne la situation environnementale actuelle avec ces chiffres réels, "
+        f"et invite l'utilisateur à poser ses questions ou envoyer une image. "
+        f"Sois chaleureux, concis (3-4 phrases), adapté au rôle de {role_label}. "
+        f"Cite les valeurs numériques importantes (AQI, SO₂, contamination sol)."
+    )
+
+    msgs = [
+        {"role": "system", "content": system},
+        {"role": "user", "content": prompt},
+    ]
+
+    response = await _call_groq(msgs, temperature=0.7)
+
+    return {
+        "agent": agent_name,
+        "role": role,
+        "langue": langue,
+        "response": response,
+        "metrics": {
+            "aqi": air.get("aqi"),
+            "so2": air.get("so2"),
+            "sol_contamination": sol.get("contamination"),
+            "sol_etat": sol.get("etat"),
+            "air_etat": air.get("etat"),
+        },
+        "timestamp": datetime.utcnow().isoformat(),
+    }

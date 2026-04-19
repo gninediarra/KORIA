@@ -270,3 +270,17 @@ async def analyze_image(
         "file_type": mime,
         "timestamp": datetime.utcnow().isoformat(),
     }
+
+
+@router.get("/welcome")
+async def agent_welcome(
+    role: str = "citoyen",
+    langue: str = "fr",
+    zone_id: str = "gct",
+):
+    """
+    Personalized welcome message with real-time data injected.
+    Called on AI screen open — greets user with actual current conditions.
+    """
+    ctx = await _build_zone_context(zone_id)
+    return await agent_engine.welcome_message(role=role, langue=langue, zone_data=ctx)
