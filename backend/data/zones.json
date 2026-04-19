@@ -1,0 +1,109 @@
+{
+  "zones": {
+    "gct": {
+      "id": "gct",
+      "nom": "Zone GCT / Industrielle",
+      "nom_ar": "منطقة المجمع الكيميائي",
+      "nom_fr": "Zone Industrielle GCT",
+      "bbox": [9.85, 33.78, 10.05, 33.92],
+      "centre": [33.85, 9.95],
+      "superficie_km2": 18.4,
+      "population": 12000,
+      "risque_principal": "contamination_phosphate",
+      "couleur": "#e74c3c",
+      "description": "Zone d'extraction et traitement des phosphates. Forte concentration en métaux lourds, SO₂ et poussières."
+    },
+    "ville": {
+      "id": "ville",
+      "nom": "Centre-Ville Gabès",
+      "nom_ar": "وسط مدينة قابس",
+      "nom_fr": "Centre-Ville de Gabès",
+      "bbox": [9.95, 33.85, 10.10, 33.98],
+      "centre": [33.88, 10.02],
+      "superficie_km2": 12.1,
+      "population": 90000,
+      "risque_principal": "pollution_atmospherique",
+      "couleur": "#f39c12",
+      "description": "Zone résidentielle et commerciale. Exposition chronique aux polluants industriels selon les vents dominants."
+    },
+    "mer": {
+      "id": "mer",
+      "nom": "Littoral / Golfe de Gabès",
+      "nom_ar": "الشريط الساحلي / خليج قابس",
+      "nom_fr": "Littoral du Golfe de Gabès",
+      "bbox": [10.05, 33.75, 10.25, 34.05],
+      "centre": [33.90, 10.15],
+      "superficie_km2": 45.2,
+      "population": 5000,
+      "risque_principal": "pollution_marine",
+      "couleur": "#3498db",
+      "description": "Zone de pêche artisanale. Contamination par rejets industriels et agricoles. Turbidité élevée."
+    },
+    "oasis": {
+      "id": "oasis",
+      "nom": "Oasis de Gabès",
+      "nom_ar": "واحة قابس",
+      "nom_fr": "Oasis de Gabès",
+      "bbox": [9.88, 33.87, 10.00, 33.95],
+      "centre": [33.91, 9.94],
+      "superficie_km2": 6.8,
+      "population": 8000,
+      "risque_principal": "degradation_sol",
+      "couleur": "#27ae60",
+      "description": "Oasis millénaire unique en milieu urbain. Dégradation progressive du sol et de la nappe phréatique."
+    }
+  },
+  "bbox_global": {
+    "sol": [9.85, 33.78, 10.25, 34.05],
+    "eau": [9.85, 33.50, 11.00, 34.10],
+    "air": [9.85, 33.78, 10.25, 34.05]
+  },
+  "sources_pollution": [
+    {
+      "id": "cheminee_gct_1",
+      "nom": "Cheminée GCT Principale",
+      "lat": 33.852,
+      "lon": 9.978,
+      "hauteur_m": 120,
+      "debit_so2_g_s": 85.0,
+      "actif": true
+    },
+    {
+      "id": "cheminee_gct_2",
+      "nom": "Cheminée GCT Secondaire",
+      "lat": 33.848,
+      "lon": 9.965,
+      "hauteur_m": 80,
+      "debit_so2_g_s": 45.0,
+      "actif": true
+    },
+    {
+      "id": "port_industriel",
+      "nom": "Port Industriel",
+      "lat": 33.902,
+      "lon": 10.081,
+      "hauteur_m": 20,
+      "debit_so2_g_s": 12.0,
+      "actif": true
+    }
+  ],
+  "thresholds": {
+    "aqi": {
+      "bon": [0, 50],
+      "modere": [51, 100],
+      "mauvais": [101, 150],
+      "tres_mauvais": [151, 200],
+      "dangereux": [201, 999]
+    },
+    "sol_sante": {
+      "sain": [70, 100],
+      "degrade": [40, 70],
+      "critique": [0, 40]
+    },
+    "turbidite": {
+      "claire": [0, 0.2],
+      "trouble": [0.2, 0.5],
+      "opaque": [0.5, 1.0]
+    }
+  }
+}

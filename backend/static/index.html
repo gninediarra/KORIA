@@ -1,0 +1,1460 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>GabèsEye — Dashboard IA</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',sans-serif;background:#070d1a;color:#dde6f0;min-height:100vh}
+header{background:linear-gradient(135deg,#0b1e30,#163550);padding:14px 28px;display:flex;align-items:center;gap:14px;border-bottom:2px solid #1a4060;position:sticky;top:0;z-index:9999}
+header h1{font-size:1.5rem;font-weight:700;color:#40d0e8;letter-spacing:1px}
+header span{font-size:.82rem;color:#7090a0}
+.badge{margin-left:auto;background:#133020;color:#50e890;padding:3px 12px;border-radius:20px;font-size:.78rem;font-weight:600;border:1px solid #2a6040}
+.badge.off{background:#2a0a0a;color:#e85050;border-color:#6a2020}
+main{max-width:1400px;margin:0 auto;padding:18px 16px}
+/* Tabs */
+.tabs{display:flex;gap:2px;margin-bottom:16px;flex-wrap:wrap;border-bottom:2px solid #142030}
+.tab{padding:8px 16px;border-radius:8px 8px 0 0;cursor:pointer;font-size:.83rem;font-weight:500;color:#5a7a90;transition:all .2s}
+.tab.active,.tab:hover{background:#112030;color:#40d0e8}
+.tab-content{display:none}.tab-content.active{display:block}
+/* Cards */
+.card{background:#0b1825;border:1px solid #1a3a52;border-radius:10px;padding:16px}
+.card:hover{border-color:#40d0e8}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:18px}
+.grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:18px}
+.grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px}
+@media(max-width:900px){.grid-4,.grid-3{grid-template-columns:1fr 1fr}.grid-2{grid-template-columns:1fr}}
+@media(max-width:600px){.grid-4,.grid-3,.grid-2{grid-template-columns:1fr}}
+h2{font-size:1rem;font-weight:600;color:#60c0d8;margin-bottom:14px;text-transform:uppercase;letter-spacing:.5px}
+h3{font-size:.78rem;color:#6090a8;margin-bottom:6px;text-transform:uppercase;letter-spacing:.4px}
+/* Value cards */
+.val-card{background:#0b1825;border:1px solid #1a3a52;border-radius:10px;padding:14px}
+.val{font-size:2rem;font-weight:700;color:#40d0e8}
+.val-lbl{font-size:.75rem;color:#5a8090;margin-top:2px}
+.val-sub{font-size:.82rem;color:#809aaa;margin-top:6px}
+/* Pills */
+.pill{display:inline-block;padding:2px 9px;border-radius:10px;font-size:.72rem;font-weight:600;margin-top:6px}
+.pill.rouge{background:#3a0a0a;color:#e88080;border:1px solid #8a2020}
+.pill.orange{background:#3a1a0a;color:#e8a050;border:1px solid #8a5020}
+.pill.vert{background:#0a2a1a;color:#50e890;border:1px solid #1a6040}
+.pill.bon{background:#0a2a1a;color:#50e890;border:1px solid #1a6040}
+.pill.modere{background:#2a2a0a;color:#e8d050;border:1px solid #6a6020}
+.pill.mauvais{background:#3a1a0a;color:#e8a050;border:1px solid #8a5020}
+.pill.tres_mauvais,.pill.dangereux{background:#3a0a0a;color:#e85050;border:1px solid #8a1020}
+/* Progress */
+.pbar{height:5px;background:#0d2030;border-radius:3px;margin-top:4px;overflow:hidden}
+.pfill{height:100%;border-radius:3px}
+.pfill.rouge{background:linear-gradient(90deg,#8a2020,#e85050)}
+.pfill.orange{background:linear-gradient(90deg,#8a4020,#e88040)}
+.pfill.vert{background:linear-gradient(90deg,#1a5030,#40c870)}
+/* Alerts */
+.alert{padding:12px 14px;border-radius:8px;display:flex;align-items:flex-start;gap:10px;font-size:.86rem;margin-bottom:8px}
+.alert.urgent{background:#2a0a0a;border:1px solid #8a2020;color:#e88080}
+.alert.warning{background:#2a1a0a;border:1px solid #8a5020;color:#e8b060}
+.alert.info{background:#0a1a2a;border:1px solid #205080;color:#70b8e0}
+.alert.ok{background:#0a2a1a;border:1px solid #1a5030;color:#50d880}
+/* Map */
+#leaflet-map{height:480px;border-radius:10px;border:1px solid #1a3a52;z-index:1}
+/* Meteo grid */
+.meteo-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.meteo-item{text-align:center;padding:10px;background:#070d1a;border-radius:8px}
+.meteo-val{font-size:1.3rem;font-weight:700;color:#70c8e0}
+.meteo-lbl{font-size:.68rem;color:#4a6a7a;margin-top:2px}
+/* Pollutants */
+.poll-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.poll-item{background:#070d1a;border-radius:8px;padding:10px}
+.poll-val{font-size:1.2rem;font-weight:700}
+.poll-lbl{font-size:.7rem;color:#4a6a7a}
+/* Bar chart */
+.bar-chart{display:flex;align-items:flex-end;gap:2px;height:70px;margin-top:10px}
+.bar{flex:1;border-radius:2px 2px 0 0;cursor:default;min-width:3px;position:relative;transition:height .4s}
+.bar.hist{background:#1a5070aa}
+.bar.pred{background:#1a8070aa}
+.bar:hover::after{content:attr(title);position:absolute;bottom:105%;left:50%;transform:translateX(-50%);background:#0d2030;color:#dde6f0;padding:2px 6px;border-radius:4px;font-size:.68rem;white-space:nowrap;pointer-events:none;z-index:99}
+.bar-legend{display:flex;gap:14px;margin-top:5px;font-size:.72rem;color:#4a6a7a}
+.dot{width:7px;height:7px;border-radius:50%;display:inline-block}
+/* Chat */
+.chat-box{height:240px;overflow-y:auto;background:#040a14;border-radius:8px;padding:10px;margin-bottom:8px}
+.msg{margin-bottom:8px;max-width:88%}
+.msg.user{margin-left:auto;text-align:right}
+.msg-bubble{display:inline-block;padding:7px 12px;border-radius:10px;font-size:.84rem;line-height:1.4}
+.msg.user .msg-bubble{background:#142840;color:#90d0f0}
+.msg.bot .msg-bubble{background:#0b1825;color:#dde6f0;border:1px solid #1a3a52}
+.chat-row{display:flex;gap:8px}
+.chat-row input{flex:1;padding:9px 12px;background:#070d1a;border:1px solid #1a3a52;border-radius:7px;color:#dde6f0;font-size:.86rem;outline:none}
+.chat-row input:focus{border-color:#40d0e8}
+/* Buttons */
+button{padding:8px 18px;border:none;border-radius:7px;cursor:pointer;font-size:.84rem;font-weight:600;transition:opacity .2s}
+button:hover{opacity:.82}
+.btn{background:#1060a0;color:#fff}
+.btn-g{background:#106050;color:#fff}
+.btn-send{background:#107080;color:#fff;padding:9px 14px}
+.btn-agent{background:#0e4878;color:#dde6f0;width:100%;margin-bottom:6px;text-align:left}
+/* Drone canvas */
+#drone-canvas{border:1px solid #1a3a52;border-radius:10px;background:#050c18;width:100%;display:block}
+/* Thermal canvas */
+#thermal-canvas{border:1px solid #1a3a52;border-radius:10px;display:block;max-width:100%}
+/* Zone table */
+.zone-card{background:#0b1825;border:1px solid #1a3a52;border-radius:10px;padding:14px}
+.zone-title{font-size:.95rem;font-weight:600;margin-bottom:10px}
+.zrow{display:flex;justify-content:space-between;margin-bottom:5px;font-size:.83rem}
+.zrow span:first-child{color:#5a8090}
+/* Model status */
+.model-row{display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px solid #0d1e2e}
+.mbadge{font-size:.72rem;padding:2px 9px;border-radius:9px;font-weight:600}
+.mbadge.ok{background:#0a2a1a;color:#50e890;border:1px solid #1a5030}
+.mbadge.err{background:#2a0a0a;color:#e88080;border:1px solid #6a2020}
+/* Sections */
+section{margin-bottom:24px}
+.loading{color:#4a6a7a;font-style:italic;font-size:.83rem;padding:12px}
+.spin{display:inline-block;animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+/* Leaflet popup */
+.leaflet-popup-content-wrapper{background:#0b1825;color:#dde6f0;border:1px solid #1a3a52;border-radius:8px}
+.leaflet-popup-tip{background:#0b1825}
+/* ── Chatbot FAB ── */
+#cb-fab{position:fixed;bottom:26px;right:26px;z-index:10000;background:linear-gradient(135deg,#0d6282,#083a58);border:2px solid #40d0e8;border-radius:30px;padding:11px 20px;cursor:pointer;display:flex;align-items:center;gap:10px;color:#d8f4ff;font-weight:700;font-size:.88rem;box-shadow:0 4px 28px rgba(64,208,232,0.32);transition:transform .18s,box-shadow .18s;user-select:none}
+#cb-fab:hover{transform:translateY(-3px);box-shadow:0 8px 36px rgba(64,208,232,0.48)}
+.cb-ping{width:9px;height:9px;background:#40d0e8;border-radius:50%;flex-shrink:0;animation:cbping 1.6s infinite}
+@keyframes cbping{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(2);opacity:.4}}
+/* ── Chatbot Panel ── */
+#cb-panel{position:fixed;bottom:88px;right:26px;z-index:9999;width:390px;max-height:70vh;background:#070d1a;border:1px solid #1a4060;border-radius:18px;box-shadow:0 12px 56px rgba(0,0,0,.75);display:none;flex-direction:column;overflow:hidden;transform:translateY(18px);opacity:0;transition:transform .22s,opacity .22s}
+#cb-panel.cbopen{display:flex;transform:translateY(0);opacity:1}
+#cb-head{background:linear-gradient(90deg,#0a1e34,#0d2a44);padding:13px 16px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #1a3a52;flex-shrink:0}
+#cb-head b{color:#40d0e8;font-size:.96rem}
+#cb-head small{color:#4a7090;font-size:.72rem;display:block;margin-top:1px}
+#cb-head-right{display:flex;align-items:center;gap:8px}
+#cb-lang-sel{background:#070d1a;color:#dde6f0;border:1px solid #1a3a52;border-radius:7px;padding:4px 8px;font-size:.78rem;cursor:pointer}
+#cb-close{background:transparent;border:none;color:#5a8090;font-size:1.1rem;cursor:pointer;padding:2px 6px;border-radius:5px}
+#cb-close:hover{color:#e07070}
+#cb-voice-bar{background:#040c18;padding:8px 14px;display:none;align-items:center;gap:10px;border-bottom:1px solid #0e1e2e;flex-shrink:0}
+#cb-voice-bar.speaking{display:flex}
+.wave{display:flex;gap:3px;align-items:flex-end;height:18px}
+.wave span{width:3px;background:#40d0e8;border-radius:2px;animation:wave .7s ease-in-out infinite}
+.wave span:nth-child(2){animation-delay:.1s;height:60%}
+.wave span:nth-child(3){animation-delay:.2s}
+.wave span:nth-child(4){animation-delay:.3s;height:55%}
+.wave span:nth-child(5){animation-delay:.15s;height:80%}
+@keyframes wave{0%,100%{transform:scaleY(1)}50%{transform:scaleY(1.9)}}
+#cb-msgs{flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:8px;min-height:120px}
+#cb-msgs::-webkit-scrollbar{width:4px}
+#cb-msgs::-webkit-scrollbar-thumb{background:#1a3a52;border-radius:2px}
+.cb-msg-u{align-self:flex-end;max-width:78%}
+.cb-msg-b{align-self:flex-start;max-width:85%}
+.cb-bub-u{background:#142840;color:#90d0f0;padding:8px 12px;border-radius:14px 14px 4px 14px;font-size:.84rem;line-height:1.5}
+.cb-bub-b{background:#0b1825;color:#dde6f0;padding:8px 12px;border-radius:14px 14px 14px 4px;font-size:.84rem;line-height:1.5;border:1px solid #1a3a52}
+.cb-bub-b.thinking{color:#40d0e8;animation:blink 1.2s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.4}}
+#cb-bar{display:flex;gap:8px;padding:10px 12px;border-top:1px solid #0e1e2e;background:#040c18;flex-shrink:0;align-items:center}
+#cb-inp{flex:1;background:#070d1a;border:1px solid #1a3a52;border-radius:10px;padding:9px 12px;color:#dde6f0;font-size:.84rem;outline:none}
+#cb-inp:focus{border-color:#40d0e8}
+#cb-mic{background:#0e3848;border:1px solid #1a5060;border-radius:10px;color:#60c0d8;font-size:1rem;padding:7px 11px;cursor:pointer;transition:background .15s}
+#cb-mic.recording{background:#801010;border-color:#e04040;color:#ffaaaa;animation:blink .6s infinite}
+#cb-send{background:#1060a0;border:none;border-radius:10px;color:#fff;padding:9px 14px;cursor:pointer;font-size:.9rem}
+#cb-send:hover{background:#1878c0}
+</style>
+</head>
+<body>
+<header>
+  <div><h1>GabèsEye</h1><span>H12 Innovation — AI Healing Gabès</span></div>
+  <div id="badge" class="badge off">● Connexion...</div>
+</header>
+<main>
+<div class="tabs">
+  <div class="tab active" onclick="goTab('carte')">🗺 Carte IA</div>
+  <div class="tab" onclick="goTab('dashboard')">📊 Dashboard</div>
+  <div class="tab" onclick="goTab('sol')">🌍 Sol</div>
+  <div class="tab" onclick="goTab('eau')">💧 Eau</div>
+  <div class="tab" onclick="goTab('air')">💨 Air</div>
+  <div class="tab" onclick="goTab('agents')">🤖 Agents IA</div>
+  <div class="tab" onclick="goTab('drone')">🚁 Drone</div>
+  <div class="tab" onclick="goTab('modeles')">⚙ Modèles</div>
+</div>
+
+<!-- CARTE -->
+<div id="tab-carte" class="tab-content active">
+  <section>
+    <h2>Carte Vivante de Contamination — Gabès (Données IA Temps Réel)</h2>
+    <div id="leaflet-map"></div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:10px;font-size:.78rem;color:#5a8090">
+      <span><span style="display:inline-block;width:12px;height:12px;background:#e85050;border-radius:2px;margin-right:4px"></span>Contamination critique</span>
+      <span><span style="display:inline-block;width:12px;height:12px;background:#e88040;border-radius:2px;margin-right:4px"></span>Dégradation modérée</span>
+      <span><span style="display:inline-block;width:12px;height:12px;background:#40c870;border-radius:2px;margin-right:4px"></span>Zone saine</span>
+      <span><span style="display:inline-block;width:12px;height:12px;background:#4090e0;border-radius:2px;margin-right:4px"></span>Source de pollution</span>
+      <button class="btn" style="margin-left:auto;font-size:.78rem;padding:4px 12px" onclick="refreshMap()">Actualiser</button>
+    </div>
+  </section>
+  <section>
+    <div class="grid-2">
+      <div class="card">
+        <h3>Qualité Air Temps Réel</h3>
+        <div id="map-air" class="loading"><span class="spin">⟳</span></div>
+      </div>
+      <div class="card">
+        <h3>Sources de Pollution Actives</h3>
+        <div id="map-sources" class="loading"><span class="spin">⟳</span></div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- DASHBOARD -->
+<div id="tab-dashboard" class="tab-content">
+  <section>
+    <h2>Vue Globale — Toutes Zones</h2>
+    <div id="zone-cards" class="grid-4"><div class="loading"><span class="spin">⟳</span> Chargement IA...</div></div>
+  </section>
+  <section>
+    <div class="grid-2">
+      <div class="card"><h3>Polluants Actuels (Open-Meteo)</h3><div id="pollutants" class="poll-grid"><div class="loading"><span class="spin">⟳</span></div></div></div>
+      <div class="card"><h3>Météo Gabès</h3><div id="meteo" class="meteo-grid"><div class="loading"><span class="spin">⟳</span></div></div></div>
+    </div>
+  </section>
+  <section><h2>Alertes</h2><div id="alerts"><div class="loading"><span class="spin">⟳</span></div></div></section>
+</div>
+
+<!-- SOL -->
+<div id="tab-sol" class="tab-content">
+  <section>
+    <h2>Analyse Sol — U-Net EfficientNet-B3 (88.8% val_acc)</h2>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
+      <select id="sol-zone" onchange="loadSol()" style="background:#070d1a;color:#dde6f0;border:1px solid #1a3a52;border-radius:7px;padding:7px 12px;font-size:.86rem">
+        <option value="gct">Zone GCT / Industrielle</option>
+        <option value="ville">Centre-Ville</option>
+        <option value="mer">Littoral / Mer</option>
+        <option value="oasis">Oasis de Gabès</option>
+      </select>
+      <button class="btn" onclick="loadSol()">Analyser</button>
+    </div>
+    <div id="sol-kpis" class="grid-4"><div class="loading"><span class="spin">⟳</span></div></div>
+  </section>
+  <section>
+    <div class="grid-2">
+      <div class="card"><h3>Distribution Classes (U-Net)</h3><div id="sol-classes"><div class="loading"><span class="spin">⟳</span></div></div></div>
+      <div class="card"><h3>Indices Spectraux (Sentinel-2)</h3><div id="sol-indices"><div class="loading"><span class="spin">⟳</span></div></div></div>
+    </div>
+  </section>
+  <section>
+    <div class="card"><h3>Prédiction LSTM Sol — score santé (val MSE=0.019) — Modèle: <span style="color:#50e890">lstm_best.pth chargé</span></h3>
+    <div id="sol-chart"><div class="loading"><span class="spin">⟳</span></div></div></div>
+  </section>
+  <section>
+    <div class="card">
+      <h3>Rendement Culture — Prédiction LSTM-driven (2024-2030)</h3>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
+        <select id="crop" style="background:#070d1a;color:#dde6f0;border:1px solid #1a3a52;border-radius:7px;padding:7px 12px;font-size:.86rem">
+          <option value="olivier">Olivier</option><option value="palmier">Palmier dattier</option>
+          <option value="tomate">Tomate</option><option value="piment">Piment</option><option value="agrumes">Agrumes</option>
+        </select>
+        <button class="btn" onclick="loadCrop()">Prédire avec LSTM</button>
+      </div>
+      <div id="crop-result"><div class="loading"><span class="spin">⟳</span></div></div>
+    </div>
+  </section>
+</div>
+
+<!-- EAU -->
+<div id="tab-eau" class="tab-content">
+  <section>
+    <h2>Qualité Eau — U-Net (77.2% val_acc) + LSTM (MSE=0.032)</h2>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
+      <select id="eau-zone" onchange="loadEau()" style="background:#070d1a;color:#dde6f0;border:1px solid #1a3a52;border-radius:7px;padding:7px 12px;font-size:.86rem">
+        <option value="mer">Littoral / Golfe</option><option value="gct">Zone GCT</option>
+        <option value="ville">Centre-Ville</option><option value="oasis">Oasis</option>
+      </select>
+      <button class="btn" onclick="loadEau()">Analyser</button>
+    </div>
+    <div id="eau-kpis" class="grid-4"><div class="loading"><span class="spin">⟳</span></div></div>
+  </section>
+  <section>
+    <div class="card"><h3>Prédiction LSTM Turbidité — Modèle: <span style="color:#50e890">lstm_eau_best.pth chargé</span></h3>
+    <div id="eau-chart"><div class="loading"><span class="spin">⟳</span></div></div></div>
+  </section>
+</div>
+
+<!-- AIR -->
+<div id="tab-air" class="tab-content">
+  <section>
+    <h2>Air Temps Réel — XGBoost (86.9%) + Gaussian Plume + LSTM (MSE=0.012)</h2>
+    <div id="air-kpis" class="grid-3"><div class="loading"><span class="spin">⟳</span></div></div>
+  </section>
+  <section>
+    <div class="card">
+      <h3>Plume Gaussienne SO₂ (Pasquill-Gifford) — Débit: 85 g/s Cheminée: 120m</h3>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;align-items:center">
+        <label style="font-size:.82rem;color:#5a8090">Stabilité:</label>
+        <select id="stab" style="background:#070d1a;color:#dde6f0;border:1px solid #1a3a52;border-radius:7px;padding:6px 10px;font-size:.83rem">
+          <option value="A">A (très instable)</option><option value="B">B</option><option value="C">C</option>
+          <option value="D" selected>D (neutre)</option><option value="E">E</option><option value="F">F (très stable)</option>
+        </select>
+        <label style="font-size:.82rem;color:#5a8090">Vent:</label>
+        <input id="wind" type="number" value="4" min="0.5" max="20" step="0.5" style="width:60px;background:#070d1a;color:#dde6f0;border:1px solid #1a3a52;border-radius:7px;padding:6px"/>
+        <button class="btn" onclick="loadPlume()">Calculer</button>
+      </div>
+      <div id="plume-result"><div class="loading"><span class="spin">⟳</span></div></div>
+    </div>
+  </section>
+  <section>
+    <div class="card"><h3>Prédiction LSTM AQI 30 jours — Modèle: <span style="color:#50e890">lstm_air_best.pth chargé</span></h3>
+    <div id="air-chart"><div class="loading"><span class="spin">⟳</span></div></div></div>
+  </section>
+</div>
+
+<!-- AGENTS -->
+<div id="tab-agents" class="tab-content">
+  <div class="grid-2">
+    <section>
+      <h2>Agents IA (Groq Llama-3.3-70b)</h2>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
+        <select id="ag-lang" style="background:#070d1a;color:#dde6f0;border:1px solid #1a3a52;border-radius:7px;padding:7px 10px;font-size:.83rem">
+          <option value="fr">Français</option><option value="ar">العربية</option><option value="en">English</option>
+        </select>
+        <select id="ag-zone" style="background:#070d1a;color:#dde6f0;border:1px solid #1a3a52;border-radius:7px;padding:7px 10px;font-size:.83rem">
+          <option value="gct">Zone GCT</option><option value="ville">Ville</option>
+          <option value="mer">Littoral</option><option value="oasis">Oasis</option>
+        </select>
+      </div>
+      <button class="btn-agent" onclick="callAgent('agriculteur')">🌾 Conseils Agriculteur (sol+météo)</button>
+      <button class="btn-agent" onclick="callAgent('pecheur')">🎣 Alertes Pêcheur (eau+marine)</button>
+      <button class="btn-agent" onclick="callAgent('citoyen')">🏙 Avis Citoyen (air+santé)</button>
+      <button class="btn-agent" onclick="callAgent('autorite')">📋 Rapport Officiel Autorités</button>
+    </section>
+    <section>
+      <h2>Réponse Agent</h2>
+      <div id="agent-result" class="card" style="min-height:180px;font-size:.87rem;line-height:1.6;white-space:pre-wrap;color:#c8d8e0">
+        Choisissez un agent ci-contre...
+      </div>
+    </section>
+  </div>
+  <section>
+    <h2>Agent Conversationnel Multilingue</h2>
+    <div class="card">
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px">
+        <select id="chat-role" style="background:#070d1a;color:#dde6f0;border:1px solid #1a3a52;border-radius:7px;padding:5px 9px;font-size:.8rem">
+          <option value="citoyen">Citoyen</option><option value="agriculteur">Agriculteur</option><option value="pecheur">Pêcheur</option>
+        </select>
+        <select id="chat-lang" style="background:#070d1a;color:#dde6f0;border:1px solid #1a3a52;border-radius:7px;padding:5px 9px;font-size:.8rem">
+          <option value="fr">FR</option><option value="ar">AR</option><option value="en">EN</option>
+        </select>
+      </div>
+      <div class="chat-box" id="chat-msgs">
+        <div class="msg bot"><div class="msg-bubble">Bonjour ! Je suis GabèsEye IA. Posez-moi une question sur l'environnement de Gabès.</div></div>
+      </div>
+      <div class="chat-row">
+        <input id="chat-in" type="text" placeholder="Votre question..." onkeypress="if(event.key==='Enter')sendChat()"/>
+        <button class="btn-send" onclick="sendChat()">Envoyer</button>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- DRONE -->
+<div id="tab-drone" class="tab-content">
+  <div class="grid-2">
+    <section>
+      <h2>Mission Drone — Digital Twin</h2>
+      <div class="card">
+        <select id="drone-zone" style="background:#070d1a;color:#dde6f0;border:1px solid #1a3a52;border-radius:7px;padding:7px 12px;font-size:.86rem;width:100%;margin-bottom:10px">
+          <option value="gct">Zone GCT / Industrielle</option>
+          <option value="ville">Centre-Ville</option>
+          <option value="mer">Littoral</option>
+        </select>
+        <button id="drone-btn" class="btn" style="width:100%;margin-bottom:12px" onclick="startDrone()">Lancer Mission</button>
+        <div id="drone-phase" style="font-size:1.1rem;font-weight:700;color:#40d0e8;letter-spacing:1px;margin-bottom:6px">EN ATTENTE</div>
+        <div style="height:8px;background:#0d2030;border-radius:4px;margin-bottom:4px;overflow:hidden">
+          <div id="bat-fill" style="height:100%;width:100%;background:linear-gradient(90deg,#1a5030,#40c870);border-radius:4px;transition:width .5s"></div>
+        </div>
+        <div id="bat-txt" style="font-size:.75rem;color:#4a6a7a;margin-bottom:12px">Batterie: 100%</div>
+        <div class="grid-3" style="gap:6px">
+          <div style="background:#040a14;border-radius:7px;padding:9px;text-align:center"><div id="d-alt" style="font-size:1.2rem;font-weight:700;color:#70d8c0">—</div><div style="font-size:.68rem;color:#4a6a7a">Alt (m)</div></div>
+          <div style="background:#040a14;border-radius:7px;padding:9px;text-align:center"><div id="d-spd" style="font-size:1.2rem;font-weight:700;color:#70d8c0">—</div><div style="font-size:.68rem;color:#4a6a7a">Vit (m/s)</div></div>
+          <div style="background:#040a14;border-radius:7px;padding:9px;text-align:center"><div id="d-so2" style="font-size:1.2rem;font-weight:700;color:#70d8c0">—</div><div style="font-size:.68rem;color:#4a6a7a">SO₂ µg</div></div>
+        </div>
+      </div>
+      <div class="card" style="margin-top:12px"><h3>IA embarquée (Jetson Nano)</h3><div id="drone-ai" style="font-size:.84rem;line-height:1.6;color:#98b8c8">Lancez une mission...</div></div>
+    </section>
+    <section>
+      <h2>Animation Vol</h2>
+      <canvas id="drone-canvas" height="380"></canvas>
+      <div style="font-size:.75rem;color:#4a6a7a;margin-top:6px;text-align:center">Simulation trajectoire drone sur zone de scan — résolution 5cm/px (Jetson Nano)</div>
+    </section>
+  </div>
+  <section>
+    <h2>Caméra Thermique FLIR — Simulation IA</h2>
+    <div class="card">
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;align-items:center">
+        <select id="therm-zone" style="background:#070d1a;color:#dde6f0;border:1px solid #1a3a52;border-radius:7px;padding:7px 12px;font-size:.86rem">
+          <option value="gct">Zone GCT (contamination phosphates)</option>
+          <option value="mer">Littoral (turbidité thermique)</option>
+          <option value="oasis">Oasis (végétation cooling)</option>
+          <option value="ville">Centre-Ville</option>
+        </select>
+        <button class="btn-g" onclick="loadThermal()">Capturer image thermique</button>
+      </div>
+      <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:flex-start">
+        <div style="position:relative;width:384px;height:384px;background:#000;border-radius:6px;overflow:hidden">
+          <canvas id="thermal-canvas" width="384" height="384" style="position:absolute;top:0;left:0;display:none"></canvas>
+          <img id="thermal-img" style="width:100%;height:100%;object-fit:cover;display:none;image-rendering:auto" alt="FLIR thermal"/>
+          <canvas id="thermal-hud" width="384" height="384" style="position:absolute;top:0;left:0;pointer-events:none"></canvas>
+        </div>
+        <div style="flex:1;min-width:200px">
+          <div id="thermal-info" style="font-size:.84rem;line-height:1.8;color:#98b8c8">Cliquez sur "Capturer" pour simuler une image thermique avec les hot spots industriels de la zone sélectionnée.</div>
+          <div style="margin-top:14px">
+            <div style="font-size:.72rem;color:#4a6a7a;margin-bottom:8px">Palette couleurs FLIR Iron:</div>
+            <canvas id="palette-legend" width="200" height="20" style="border-radius:4px;display:block"></canvas>
+            <div style="display:flex;justify-content:space-between;font-size:.68rem;color:#4a6a7a;margin-top:3px"><span>Froid</span><span>Chaud</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- MODELES -->
+<div id="tab-modeles" class="tab-content">
+  <section>
+    <h2>Statut des Modèles IA Chargés</h2>
+    <div class="card" id="models-list"><div class="loading"><span class="spin">⟳</span></div></div>
+  </section>
+  <section>
+    <div class="grid-2">
+      <div class="card">
+        <h3>Accès API Swagger</h3>
+        <p style="font-size:.87rem;color:#6090a8;margin-bottom:10px">Documentation interactive de tous les endpoints:</p>
+        <a href="/docs" target="_blank" style="color:#40d0e8;font-size:.9rem">Ouvrir Swagger UI →</a>
+        <div style="margin-top:14px;font-family:monospace;font-size:.74rem;color:#3a5a6a;line-height:1.8">
+          GET /sol/{zone} — U-Net + Mahalanobis<br>
+          GET /sol/{zone}/predict — LSTM sol<br>
+          GET /eau/{zone}/predict — LSTM eau<br>
+          GET /air/{zone}/realtime — XGBoost + Open-Meteo<br>
+          GET /air/plume/{zone} — Gaussian Plume<br>
+          GET /map/living — GeoJSON zones IA<br>
+          POST /agent/chat — LLM Groq<br>
+          WS /ws/drone/{id} — Télémétrie
+        </div>
+      </div>
+      <div class="card">
+        <h3>Architecture IA</h3>
+        <div style="font-size:.83rem;line-height:1.9;color:#98b8c8">
+          <b style="color:#40d0e8">U-Net Sol</b> — EfficientNet-B3, in_ch=5, 5 classes, val_acc=88.8%<br>
+          <b style="color:#40d0e8">U-Net Eau</b> — EfficientNet-B3, in_ch=6, 5 classes, val_acc=77.2%<br>
+          <b style="color:#40d0e8">LSTM Sol/Eau</b> — BiLSTM, hidden=64, layers=2, input=4, MSE≈0.02<br>
+          <b style="color:#40d0e8">LSTM Air</b> — BiLSTM, hidden=128, layers=2, input=4, MSE=0.012<br>
+          <b style="color:#40d0e8">XGBoost</b> — 7 features météo, accuracy=86.9%<br>
+          <b style="color:#40d0e8">Plume Gaussienne</b> — Pasquill-Gifford SO₂, classes A-F<br>
+          <b style="color:#40d0e8">LLM</b> — Groq Llama-3.3-70b, FR/AR/EN/Tamazight<br>
+          <b style="color:#40d0e8">Données</b> — Sentinel-2 L2A (20m) via CDSE + Open-Meteo
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+</main>
+
+<!-- ── Floating Chatbot ── -->
+<div id="cb-fab" onclick="cbToggle()">
+  <div class="cb-ping"></div>
+  <span>🤖</span>
+  <span id="cb-fab-lbl">Parler à l'IA</span>
+</div>
+
+<div id="cb-panel">
+  <div id="cb-head">
+    <div>
+      <b>GabèsEye IA</b>
+      <small id="cb-subtitle">Surveillance environnementale — Gabès</small>
+    </div>
+    <div id="cb-head-right">
+      <select id="cb-lang-sel" onchange="cbLangChange()">
+        <option value="fr">🇫🇷 Français</option>
+        <option value="en">🇺🇸 English</option>
+        <option value="ar">🇹🇳 عربي</option>
+      </select>
+      <button id="cb-close" onclick="cbToggle()">✕</button>
+    </div>
+  </div>
+  <div id="cb-voice-bar">
+    <div class="wave"><span></span><span></span><span></span><span></span><span></span></div>
+    <span id="cb-voice-lbl" style="font-size:.78rem;color:#40d0e8">En cours de parole...</span>
+    <button onclick="cbStopSpeech()" style="margin-left:auto;background:#1a3a52;border:none;color:#90b0c0;border-radius:6px;padding:3px 9px;cursor:pointer;font-size:.76rem">⏹ Stop</button>
+  </div>
+  <div id="cb-msgs"></div>
+  <div id="cb-bar">
+    <input id="cb-inp" type="text" placeholder="Écrivez ou parlez..." dir="auto" onkeypress="if(event.key==='Enter')cbSend()"/>
+    <button id="cb-mic" onclick="cbMicToggle()" title="Parole vocale">🎤</button>
+    <button id="cb-send" onclick="cbSend()">↑</button>
+  </div>
+</div>
+
+<script>
+// ── Globals ──
+let chatHistory=[], droneWS=null;
+const API='';
+
+// ── Tabs ──
+const TABS=['carte','dashboard','sol','eau','air','agents','drone','modeles'];
+function goTab(name){
+  document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',TABS[i]===name));
+  document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active'));
+  document.getElementById('tab-'+name).classList.add('active');
+  if(name==='carte') initMap();
+  if(name==='dashboard') loadDash();
+  if(name==='sol'){loadSol();loadSolChart();loadCrop()}
+  if(name==='eau'){loadEau();loadEauChart()}
+  if(name==='air'){loadAir();loadPlume();loadAirChart()}
+  if(name==='drone') initDroneCanvas();
+  if(name==='modeles') checkModels();
+}
+
+// ── Helpers ──
+async function api(p){const r=await fetch(API+p);if(!r.ok)throw new Error(r.status+' '+await r.text());return r.json()}
+async function post(p,b){const r=await fetch(API+p,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(b)});if(!r.ok)throw new Error(r.status+' '+await r.text());return r.json()}
+function pill(s){return`<span class="pill ${s}">${s.toUpperCase()}</span>`}
+function pbar(v,s){return`<div class="pbar"><div class="pfill ${s}" style="width:${Math.min(100,v)}%"></div></div>`}
+function err(e){return`<div style="color:#e88080;font-size:.82rem">Erreur: ${e.message||e}</div>`}
+
+// ═══════════════════════════════════════════════════
+// LEAFLET MAP
+// ═══════════════════════════════════════════════════
+let leafMap=null, zonesLayer=null, sourcesLayer=null;
+
+function initMap(){
+  if(leafMap) return refreshMap();
+  leafMap=L.map('leaflet-map').setView([33.88,10.07],12);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
+    attribution:'© OpenStreetMap | GabèsEye IA',
+    maxZoom:18
+  }).addTo(leafMap);
+  refreshMap();
+}
+
+async function refreshMap(){
+  try{
+    const d=await api('/map/living');
+    if(zonesLayer){leafMap.removeLayer(zonesLayer);zonesLayer=null}
+    if(sourcesLayer){leafMap.removeLayer(sourcesLayer);sourcesLayer=null}
+
+    const statusColor={rouge:'#e85050',orange:'#e88040',vert:'#40c870'};
+    const layers=[];
+
+    d.features.forEach(f=>{
+      const p=f.properties;
+      const color=statusColor[p.global_status]||'#5090c0';
+      const poly=L.polygon(
+        f.geometry.coordinates[0].map(c=>[c[1],c[0]]),
+        {
+          color:color, weight:2, opacity:.9,
+          fillColor:color, fillOpacity:.28
+        }
+      );
+      poly.bindPopup(`
+        <div style="min-width:200px">
+          <b style="font-size:.95rem">${p.nom}</b><br>
+          <small style="color:#88aacc">${p.nom_ar}</small>
+          <hr style="border-color:#1a3a52;margin:6px 0">
+          <b>Sol</b><br>
+          &nbsp;Contamination: <b>${p.sol_contamination_pct}%</b> ${pill(p.sol_status)}<br>
+          &nbsp;Score santé: <b>${p.sol_health}/100</b><br>
+          <b>Eau</b><br>
+          &nbsp;Turbidité: <b>${p.eau_turbidite}</b> ${pill(p.eau_status)}
+        </div>
+      `);
+
+      // Zone label marker
+      const label=L.divIcon({
+        className:'',
+        html:`<div style="background:#0b1825cc;color:#40d0e8;font-size:.72rem;font-weight:600;padding:2px 7px;border-radius:6px;border:1px solid ${color};white-space:nowrap">${p.nom.replace('Zone ','')}</div>`,
+        iconAnchor:[0,0]
+      });
+      L.marker([p.centre_lat,p.centre_lon],{icon:label}).addTo(leafMap);
+
+      layers.push(poly);
+    });
+
+    zonesLayer=L.layerGroup(layers).addTo(leafMap);
+
+    // Pollution sources
+    const srcLayers=[];
+    (d.pollution_sources||[]).forEach(s=>{
+      const srcIcon=L.divIcon({
+        className:'',
+        html:`<div style="background:#2a0a0a;border:2px solid #e85050;border-radius:50%;width:16px;height:16px;display:flex;align-items:center;justify-content:center;font-size:10px" title="${s.nom}">🏭</div>`,
+        iconAnchor:[8,8]
+      });
+      const m=L.marker([s.lat,s.lon],{icon:srcIcon});
+      m.bindPopup(`<b>${s.nom}</b><br>Hauteur: ${s.hauteur_m}m<br>Débit SO₂: ${s.debit_so2_g_s} g/s`);
+      srcLayers.push(m);
+    });
+    sourcesLayer=L.layerGroup(srcLayers).addTo(leafMap);
+
+    // Update side panels
+    const aq=d.air_quality;
+    document.getElementById('map-air').innerHTML=`
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        ${[['AQI',aq.aqi,'#e87040'],['SO₂',aq.so2,'#e85050'],['PM10',aq.pm10,'#e8a040'],['NO₂',aq.no2||'—','#a050e0']].map(([l,v,c])=>
+          `<div style="text-align:center"><div style="font-size:1.4rem;font-weight:700;color:${c}">${v}</div><div style="font-size:.7rem;color:#5a8090">${l}</div></div>`
+        ).join('')}
+      </div>
+      ${pill(d.air_quality.alert_level||'modere')}
+      <div style="margin-top:8px;font-size:.78rem;color:#4a6a7a">Source: Open-Meteo Air Quality API</div>
+    `;
+
+    document.getElementById('map-sources').innerHTML=`
+      ${(d.pollution_sources||[]).map(s=>`
+        <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #0d1e2e;font-size:.83rem">
+          <span>🏭 ${s.nom}</span>
+          <span style="color:#e87040">${s.debit_so2_g_s} g/s SO₂</span>
+        </div>
+      `).join('')}
+    `;
+  }catch(e){
+    document.getElementById('map-air').innerHTML=err(e);
+  }
+}
+
+// ═══════════════════════════════════════════════════
+// DASHBOARD
+// ═══════════════════════════════════════════════════
+async function loadDash(){
+  try{
+    const d=await api('/dashboard');
+    document.getElementById('badge').textContent='● En ligne';
+    document.getElementById('badge').className='badge';
+
+    const zn={gct:'Zone GCT',ville:'Centre-Ville',mer:'Littoral',oasis:'Oasis'};
+    document.getElementById('zone-cards').innerHTML=Object.entries(d.zones).map(([id,z])=>`
+      <div class="zone-card">
+        <div class="zone-title">${zn[id]||id}</div>
+        <div class="zrow"><span>Sol santé (LSTM)</span><span>${z.sol.health_score}/100</span></div>
+        ${pbar(z.sol.health_score,z.sol.status)}
+        <div class="zrow" style="margin-top:7px"><span>Contamination (U-Net)</span><span>${z.sol.contamination_pct}%</span></div>
+        ${pbar(z.sol.contamination_pct,z.sol.status)}
+        <div class="zrow" style="margin-top:7px"><span>Turbidité (U-Net)</span><span>${z.eau.turbidite}</span></div>
+        ${pill(z.sol.status)}
+      </div>
+    `).join('');
+
+    const aq=d.air_quality;
+    const pc={aqi:'#e87040',pm10:'#e8a040',pm25:'#e8c040',so2:'#e85050',no2:'#a050e0',o3:'#4090e0'};
+    document.getElementById('pollutants').innerHTML=[
+      ['AQI',aq.aqi,'aqi'],['PM10',aq.pm10,'pm10'],['PM2.5',aq.pm25||'—','pm25'],
+      ['SO₂',aq.so2,'so2'],['NO₂',aq.no2||'—','no2'],['O₃',aq.o3||'—','o3']
+    ].map(([l,v,k])=>`<div class="poll-item"><div class="poll-val" style="color:${pc[k]||'#70c8e0'}">${v}</div><div class="poll-lbl">${l}</div></div>`).join('');
+
+    const m=d.meteo;
+    document.getElementById('meteo').innerHTML=[
+      ['🌡',m.temperature+'°C','Temp'],['💧',m.humidity+'%','Humidité'],
+      ['💨',m.wind_speed+' m/s','Vent'],['🧭',m.wind_direction+'°','Direction']
+    ].map(([i,v,l])=>`<div class="meteo-item"><div style="font-size:1.2rem">${i}</div><div class="meteo-val">${v}</div><div class="meteo-lbl">${l}</div></div>`).join('');
+
+    document.getElementById('alerts').innerHTML=(d.recommendations||[]).map(r=>
+      `<div class="alert ${r.type}"><span>${r.icon||'ℹ'}</span><span>${r.message}</span></div>`
+    ).join('');
+  }catch(e){
+    document.getElementById('badge').textContent='● Hors ligne';
+    document.getElementById('badge').className='badge off';
+    document.getElementById('zone-cards').innerHTML=err(e);
+  }
+}
+
+// ═══════════════════════════════════════════════════
+// SOL
+// ═══════════════════════════════════════════════════
+async function loadSol(){
+  const z=document.getElementById('sol-zone').value;
+  document.getElementById('sol-kpis').innerHTML='<div class="loading"><span class="spin">⟳</span> U-Net inference...</div>';
+  document.getElementById('sol-classes').innerHTML='<div class="loading"><span class="spin">⟳</span></div>';
+  document.getElementById('sol-indices').innerHTML='<div class="loading"><span class="spin">⟳</span></div>';
+  try{
+    const d=await api(`/sol/${z}`);
+    document.getElementById('sol-kpis').innerHTML=[
+      ['Score Santé',d.health_score+'/100',d.status],
+      ['Contamination',d.contamination_pct+'%',d.status],
+      ['Anomalies Mahalanobis',d.anomaly_pct+'%','orange'],
+      ['Source IA',d.source.replace(/_/g,' '),'vert'],
+    ].map(([l,v,s])=>`<div class="val-card"><div class="val">${v}</div><div class="val-lbl">${l}</div>${pill(s)}</div>`).join('');
+
+    const cls=d.class_distribution||{};
+    const cc={vegetation:'#40c870',sol_agricole:'#90d890',sol_nu:'#e8d060',sol_degrade:'#e89050',contamine_gct:'#e85050'};
+    document.getElementById('sol-classes').innerHTML=Object.entries(cls).map(([k,v])=>`
+      <div style="margin-top:8px">
+        <div style="display:flex;justify-content:space-between;font-size:.82rem;margin-bottom:2px">
+          <span style="color:${cc[k]||'#80a0b0'}">${k.replace(/_/g,' ')}</span><span>${v}%</span>
+        </div>
+        <div class="pbar"><div class="pfill" style="width:${v}%;background:${cc[k]||'#406080'}"></div></div>
+      </div>
+    `).join('');
+
+    const idx=d.indices||{};
+    document.getElementById('sol-indices').innerHTML=Object.entries(idx).map(([k,v])=>`
+      <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #0d1e2e;font-size:.84rem">
+        <span style="color:#5090b0">${k}</span>
+        <span style="font-weight:600;color:#${v>0?'40c870':'e87060'}">${v}</span>
+      </div>
+    `).join('');
+  }catch(e){document.getElementById('sol-kpis').innerHTML=err(e)}
+}
+
+async function loadSolChart(){
+  const z=document.getElementById('sol-zone').value;
+  try{
+    const d=await api(`/sol/${z}/predict?steps=12&freq=monthly`);
+    renderChart('sol-chart',d,'Score Santé Sol — LSTM '+(d.source==='lstm_model'?'(modèle réel chargé)':'(simulation)'));
+  }catch(e){document.getElementById('sol-chart').innerHTML=err(e)}
+}
+
+async function loadCrop(){
+  const z=document.getElementById('sol-zone').value;
+  const c=document.getElementById('crop').value;
+  document.getElementById('crop-result').innerHTML='<div class="loading"><span class="spin">⟳</span> LSTM prediction...</div>';
+  try{
+    const d=await api(`/sol/${z}/crop-yield?culture=${c}`);
+    const maxY=Math.max(...d.forecast.map(f=>f.yield_kg_ha));
+    document.getElementById('crop-result').innerHTML=`
+      <div style="font-size:.85rem;margin-bottom:10px">
+        <b>${c}</b> — Base: ${d.baseline_yield_kg_ha} kg/ha | Facteur actuel: <b>${d.current_degradation_factor}</b> | Source LSTM: <span style="color:#50e890">${d.lstm_health_source}</span>
+      </div>
+      <div style="display:flex;align-items:flex-end;gap:3px;height:70px">
+        ${d.forecast.map(f=>{
+          const h=Math.max(6,Math.round(f.yield_kg_ha/maxY*64));
+          const c2=f.loss_vs_baseline_pct>30?'#e85050':f.loss_vs_baseline_pct>15?'#e88040':'#40c870';
+          return`<div style="flex:1;height:${h}px;background:${c2};border-radius:2px 2px 0 0;cursor:default" title="${f.year}: ${f.yield_kg_ha} kg/ha (-${f.loss_vs_baseline_pct}%)"></div>`;
+        }).join('')}
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:.68rem;color:#4a6a7a;margin:3px 0 8px">
+        ${d.forecast.map(f=>`<span>${f.year}</span>`).join('')}
+      </div>
+      <div style="font-size:.83rem;color:#70b0d0;border-left:2px solid #2060a0;padding-left:9px">${d.recommendation}</div>
+    `;
+  }catch(e){document.getElementById('crop-result').innerHTML=err(e)}
+}
+
+// ═══════════════════════════════════════════════════
+// EAU
+// ═══════════════════════════════════════════════════
+async function loadEau(){
+  const z=document.getElementById('eau-zone').value;
+  document.getElementById('eau-kpis').innerHTML='<div class="loading"><span class="spin">⟳</span> U-Net eau...</div>';
+  try{
+    const d=await api(`/eau/${z}`);
+    document.getElementById('eau-kpis').innerHTML=[
+      ['Turbidité',d.turbidite,d.status],
+      ['Contamination',d.contamination_pct+'%',d.status],
+      ['NDWI',(d.indices||{}).NDWI||'—','vert'],
+      ['Anomalies',d.anomaly_pct+'%',d.status],
+    ].map(([l,v,s])=>`<div class="val-card"><div class="val">${v}</div><div class="val-lbl">${l}</div>${pill(s)}</div>`).join('');
+  }catch(e){document.getElementById('eau-kpis').innerHTML=err(e)}
+}
+
+async function loadEauChart(){
+  const z=document.getElementById('eau-zone').value;
+  try{
+    const d=await api(`/eau/${z}/predict?steps=12&freq=monthly`);
+    renderChart('eau-chart',d,'Turbidité Eau — LSTM '+(d.source==='lstm_model'?'(modèle réel)':'(simulation)'));
+  }catch(e){document.getElementById('eau-chart').innerHTML=err(e)}
+}
+
+// ═══════════════════════════════════════════════════
+// AIR
+// ═══════════════════════════════════════════════════
+async function loadAir(){
+  document.getElementById('air-kpis').innerHTML='<div class="loading"><span class="spin">⟳</span> XGBoost + Open-Meteo...</div>';
+  try{
+    const d=await api('/air/gct/realtime');
+    const ep=d.episode_prediction;
+    document.getElementById('air-kpis').innerHTML=`
+      <div class="val-card">
+        <div class="val" style="color:${d.global_alert_level==='rouge'?'#e85050':d.global_alert_level==='orange'?'#e88040':'#40c870'}">${d.air_quality.aqi}</div>
+        <div class="val-lbl">AQI (Open-Meteo)</div>${pill(d.global_alert_level)}
+      </div>
+      <div class="val-card">
+        <div class="val" style="color:#e87040">${d.air_quality.so2}</div>
+        <div class="val-lbl">SO₂ µg/m³</div>
+        <div class="val-sub">PM10: ${d.air_quality.pm10} µg/m³</div>
+      </div>
+      <div class="val-card">
+        <div class="val" style="font-size:1rem;padding-top:4px">${ep.episode_type.replace(/_/g,' ')}</div>
+        <div class="val-lbl">XGBoost Épisode +6h</div>
+        <div class="val-sub">Confiance: ${Math.round(ep.confidence*100)}%</div>
+        ${pill(ep.alert_level)}
+      </div>
+    `;
+  }catch(e){document.getElementById('air-kpis').innerHTML=err(e)}
+}
+
+async function loadPlume(){
+  const st=document.getElementById('stab').value;
+  const w=document.getElementById('wind').value;
+  document.getElementById('plume-result').innerHTML='<div class="loading"><span class="spin">⟳</span> Calcul plume...</div>';
+  try{
+    const d=await api(`/air/plume/gct?wind_speed=${w}&stability=${st}`);
+    const rz=d.risk_zones;
+    document.getElementById('plume-result').innerHTML=`
+      <div class="grid-3" style="margin-bottom:12px">
+        <div class="val-card"><div class="val" style="font-size:1.4rem">${d.concentration_max_ug_m3}</div><div class="val-lbl">Conc. max µg/m³</div></div>
+        <div class="val-card"><div class="val" style="font-size:1.4rem">${d.affected_area_km2}</div><div class="val-lbl">Surface danger (km²)</div></div>
+        <div class="val-card"><div class="val" style="font-size:1.4rem">${st}</div><div class="val-lbl">Classe stabilité P-G</div></div>
+      </div>
+      <h3 style="margin-bottom:6px">Distribution zones de risque</h3>
+      <div style="display:flex;height:36px;gap:2px;border-radius:6px;overflow:hidden">
+        <div style="width:${rz.safe_pct}%;background:#1a5030;display:flex;align-items:center;justify-content:center;font-size:.72rem;color:#90f0b0">Sûr ${rz.safe_pct}%</div>
+        <div style="width:${rz.moderate_pct}%;background:#604010;display:flex;align-items:center;justify-content:center;font-size:.72rem;color:#e8b060">Modéré ${rz.moderate_pct}%</div>
+        <div style="width:${rz.danger_pct}%;background:#601010;display:flex;align-items:center;justify-content:center;font-size:.72rem;color:#e87060">Danger ${rz.danger_pct}%</div>
+      </div>
+      <div style="margin-top:8px;font-size:.76rem;color:#4a6a7a">Vent: ${w} m/s | Classe: ${st} | Q=85 g/s | H=120m | Méthode: Pasquill-Gifford</div>
+    `;
+  }catch(e){document.getElementById('plume-result').innerHTML=err(e)}
+}
+
+async function loadAirChart(){
+  try{
+    const d=await api('/air/gct/predict?steps=30&freq=daily');
+    renderChart('air-chart',d,'AQI Prédit — LSTM 30 jours '+(d.source==='lstm_model'?'(modèle réel)':'(simulation)'));
+  }catch(e){document.getElementById('air-chart').innerHTML=err(e)}
+}
+
+// ═══════════════════════════════════════════════════
+// Bar chart renderer
+// ═══════════════════════════════════════════════════
+function renderChart(id,data,title){
+  const all=[...(data.history||[]),...(data.predictions||[])];
+  const vals=all.map(p=>p.value);
+  const mn=Math.min(...vals),mx=Math.max(...vals);
+  const range=mx-mn||1;
+  document.getElementById(id).innerHTML=`
+    <div style="font-size:.8rem;color:#5090a8;margin-bottom:6px">${title}</div>
+    <div class="bar-chart">
+      ${(data.history||[]).map(p=>{
+        const h=Math.max(4,Math.round(((p.value-mn)/range)*64));
+        return`<div class="bar hist" style="height:${h}px" title="${p.date}: ${p.value}"></div>`;
+      }).join('')}
+      ${(data.predictions||[]).map(p=>{
+        const h=Math.max(4,Math.round(((p.value-mn)/range)*64));
+        return`<div class="bar pred" style="height:${h}px" title="${p.date}: ${p.value} (préd)"></div>`;
+      }).join('')}
+    </div>
+    <div class="bar-legend">
+      <span><span class="dot" style="background:#1a5070aa"></span> Historique (12 périodes)</span>
+      <span><span class="dot" style="background:#1a8070aa"></span> Prédiction LSTM</span>
+      <span style="margin-left:auto">Tendance: <b style="color:${data.trend==='hausse'?'#e87040':'#40c870'}">${data.trend||'—'}</b></span>
+    </div>
+  `;
+}
+
+// ═══════════════════════════════════════════════════
+// AGENTS
+// ═══════════════════════════════════════════════════
+async function callAgent(type){
+  const langue=document.getElementById('ag-lang').value;
+  const zone_id=document.getElementById('ag-zone').value;
+  document.getElementById('agent-result').textContent='⟳ Groq Llama-3.3-70b en cours...';
+  try{
+    const d=await post(`/agent/${type}`,{zone_id,langue});
+    document.getElementById('agent-result').textContent=d.response;
+  }catch(e){document.getElementById('agent-result').innerHTML=err(e)}
+}
+
+async function sendChat(){
+  const inp=document.getElementById('chat-in');
+  const msg=inp.value.trim();
+  if(!msg)return;
+  inp.value='';
+  const role=document.getElementById('chat-role').value;
+  const langue=document.getElementById('chat-lang').value;
+  const box=document.getElementById('chat-msgs');
+  box.innerHTML+=`<div class="msg user"><div class="msg-bubble">${msg}</div></div>`;
+  box.innerHTML+=`<div class="msg bot" id="typing"><div class="msg-bubble"><span class="spin">⟳</span></div></div>`;
+  box.scrollTop=box.scrollHeight;
+  chatHistory.push({role:'user',content:msg});
+  try{
+    const d=await post('/agent/chat',{message:msg,history:chatHistory.slice(-6),role,langue});
+    document.getElementById('typing').outerHTML=`<div class="msg bot"><div class="msg-bubble">${d.response}</div></div>`;
+    chatHistory.push({role:'assistant',content:d.response});
+    box.scrollTop=box.scrollHeight;
+  }catch(e){
+    document.getElementById('typing').outerHTML=`<div class="msg bot"><div class="msg-bubble" style="color:#e88080">${e.message}</div></div>`;
+  }
+}
+
+// ═══════════════════════════════════════════════════
+// 3D ISOMETRIC DRONE SCENE
+// ═══════════════════════════════════════════════════
+const ISO_TW=54,ISO_TH=27,ISO_BH=28;
+const ISO_COLS=14,ISO_ROWS=10;
+let ISO_OX=0,ISO_OY=0;
+// Terrain: 0=vegetation, 1=degraded, 2=contaminated, 3=industrial_floor, 4=chimney_tall, 5=building
+const ISO_MAP=[
+  [0,0,0,1,2,3,3,4,3,3,2,1,0,0],
+  [0,0,1,1,2,3,3,3,3,2,2,1,1,0],
+  [0,1,1,2,2,3,5,3,3,2,1,1,0,0],
+  [0,1,2,2,3,3,3,3,2,2,1,0,0,0],
+  [1,1,2,3,3,4,3,3,2,1,0,0,0,0],
+  [1,2,2,3,3,3,3,2,2,1,0,0,0,0],
+  [1,2,3,3,3,3,2,2,1,0,0,0,0,0],
+  [2,2,3,3,2,2,1,1,0,0,0,0,0,0],
+  [1,2,2,2,1,1,0,0,0,0,0,0,0,0],
+  [1,1,1,1,0,0,0,0,0,0,0,0,0,0],
+];
+const ISO_HGT={4:8,5:4};
+const T_TOP =['#1e4228','#624416','#7c2410','#2e2e2e','#3c3c44','#484850'];
+const T_LEFT=['#122818','#422e0c','#521006','#1c1c1c','#26262e','#303038'];
+const T_RIGHT=['#1a3420','#523810','#640e0c','#242424','#32323a','#3c3c44'];
+const ISO_WPS=[{col:7,row:1,name:'GCT Nord'},{col:6,row:4,name:'Centre'},{col:9,row:6,name:'GCT Sud'},{col:3,row:5,name:'Ouest'}];
+let isoMission=false,isoAnim=null,isoCx=0.5,isoCy=0.5,isoZ=75,isoWpIdx=0,rotorA=0;
+let isoTrail=[],isoSmokes=[];
+
+function isoXY(col,row,z=0){return{x:ISO_OX+(col-row)*ISO_TW/2,y:ISO_OY+(col+row)*ISO_TH/2-z};}
+
+function initDroneCanvas(){
+  const cv=document.getElementById('drone-canvas');
+  const pw=cv.parentElement.clientWidth||520;
+  cv.width=pw;cv.height=440;
+  ISO_OX=cv.width/2;ISO_OY=cv.height*0.2;
+  isoSmokes=[];drawIsoFrame();
+}
+
+function isoFlatTile(ctx,col,row,color){
+  const{x,y}=isoXY(col,row);
+  ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x+ISO_TW/2,y+ISO_TH/2);
+  ctx.lineTo(x,y+ISO_TH);ctx.lineTo(x-ISO_TW/2,y+ISO_TH/2);
+  ctx.closePath();ctx.fillStyle=color;ctx.fill();
+  ctx.strokeStyle='#07111c';ctx.lineWidth=0.5;ctx.stroke();
+}
+
+function isoBlock(ctx,col,row,bh,type){
+  const{x,y}=isoXY(col,row);
+  ctx.beginPath();ctx.moveTo(x+ISO_TW/2,y+ISO_TH/2-bh);ctx.lineTo(x,y+ISO_TH-bh);
+  ctx.lineTo(x,y+ISO_TH);ctx.lineTo(x+ISO_TW/2,y+ISO_TH/2);ctx.closePath();
+  ctx.fillStyle=T_RIGHT[type];ctx.fill();ctx.strokeStyle='#07111c';ctx.lineWidth=0.5;ctx.stroke();
+  ctx.beginPath();ctx.moveTo(x-ISO_TW/2,y+ISO_TH/2-bh);ctx.lineTo(x,y+ISO_TH-bh);
+  ctx.lineTo(x,y+ISO_TH);ctx.lineTo(x-ISO_TW/2,y+ISO_TH/2);ctx.closePath();
+  ctx.fillStyle=T_LEFT[type];ctx.fill();ctx.strokeStyle='#07111c';ctx.lineWidth=0.5;ctx.stroke();
+  ctx.beginPath();ctx.moveTo(x,y-bh);ctx.lineTo(x+ISO_TW/2,y+ISO_TH/2-bh);
+  ctx.lineTo(x,y+ISO_TH-bh);ctx.lineTo(x-ISO_TW/2,y+ISO_TH/2-bh);ctx.closePath();
+  ctx.fillStyle=T_TOP[type];ctx.fill();ctx.strokeStyle='#07111c';ctx.lineWidth=0.5;ctx.stroke();
+}
+
+function isoChimney(ctx,col,row,floors){
+  const{x,y}=isoXY(col,row);
+  const tw=ISO_TW*0.32,th=ISO_TH*0.32,bh=floors*ISO_BH;
+  [[x+tw/2,y+th/2-bh,x,y+th-bh,x,y+th,x+tw/2,y+th/2,'#181820'],
+   [x-tw/2,y+th/2-bh,x,y+th-bh,x,y+th,x-tw/2,y+th/2,'#101018'],
+   [x,y-bh,x+tw/2,y+th/2-bh,x,y+th-bh,x-tw/2,y+th/2-bh,'#20202c']].forEach(([x1,y1,x2,y2,x3,y3,x4,y4,c])=>{
+    ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.lineTo(x3,y3);ctx.lineTo(x4,y4);
+    ctx.closePath();ctx.fillStyle=c;ctx.fill();ctx.strokeStyle='#07111c';ctx.lineWidth=0.5;ctx.stroke();
+  });
+  const g=ctx.createRadialGradient(x,y-bh,0,x,y-bh,22);
+  g.addColorStop(0,'rgba(255,150,50,0.28)');g.addColorStop(1,'rgba(0,0,0,0)');
+  ctx.fillStyle=g;ctx.beginPath();ctx.arc(x,y-bh,22,0,Math.PI*2);ctx.fill();
+}
+
+function drawDrone3D(ctx,cx,cy,z,ra,mission){
+  const gs=isoXY(cx,cy,0),dp=isoXY(cx,cy,z);
+  // Shadow
+  ctx.save();ctx.globalAlpha=0.38;
+  ctx.beginPath();ctx.ellipse(gs.x,gs.y+ISO_TH*0.5,ISO_TW*0.42,ISO_TH*0.28,0,0,Math.PI*2);
+  ctx.fillStyle='#000';ctx.fill();ctx.restore();
+  // Scan cone
+  if(mission){
+    const gr=ctx.createLinearGradient(dp.x,dp.y,gs.x,gs.y+ISO_TH*0.5);
+    gr.addColorStop(0,'rgba(64,208,232,0.20)');gr.addColorStop(1,'rgba(64,208,232,0)');
+    ctx.beginPath();ctx.moveTo(dp.x,dp.y);
+    ctx.lineTo(gs.x-ISO_TW*0.52,gs.y+ISO_TH*0.62);ctx.lineTo(gs.x+ISO_TW*0.52,gs.y+ISO_TH*0.62);
+    ctx.closePath();ctx.fillStyle=gr;ctx.fill();
+  }
+  // Arms + rotors (4 isometric directions)
+  [[ISO_TW*0.48,ISO_TH*0.24],[ISO_TW*0.48,-ISO_TH*0.24],[-ISO_TW*0.48,ISO_TH*0.24],[-ISO_TW*0.48,-ISO_TH*0.24]].forEach(([adx,ady],i)=>{
+    ctx.beginPath();ctx.moveTo(dp.x,dp.y);ctx.lineTo(dp.x+adx*0.5,dp.y+ady*0.5);
+    ctx.strokeStyle=mission?'#40d0e8':'#2a5070';ctx.lineWidth=2.5;ctx.stroke();
+    const rx=dp.x+adx*0.5,ry=dp.y+ady*0.5;
+    ctx.save();ctx.translate(rx,ry);
+    ctx.beginPath();ctx.ellipse(0,0,9,4.5,ra+i*Math.PI/2,0,Math.PI*2);
+    ctx.strokeStyle=mission?'rgba(64,208,232,0.75)':'rgba(42,80,110,0.5)';ctx.lineWidth=1.5;ctx.stroke();
+    for(let b=0;b<3;b++){
+      const ba=ra+i*Math.PI/2+b*Math.PI/3;
+      ctx.beginPath();ctx.moveTo(Math.cos(ba)*-9,Math.sin(ba)*-4.5);ctx.lineTo(Math.cos(ba)*9,Math.sin(ba)*4.5);
+      ctx.strokeStyle=mission?'rgba(64,208,232,0.22)':'rgba(42,80,110,0.12)';ctx.lineWidth=1;ctx.stroke();
+    }
+    ctx.restore();
+  });
+  // Body
+  ctx.beginPath();ctx.ellipse(dp.x,dp.y,8,5,0,0,Math.PI*2);
+  const bg=ctx.createRadialGradient(dp.x-2,dp.y-2,0,dp.x,dp.y,9);
+  bg.addColorStop(0,mission?'#92f2ff':'#5a7888');bg.addColorStop(1,mission?'#0e88aa':'#202e38');
+  ctx.fillStyle=bg;ctx.fill();ctx.strokeStyle='#40d0e8';ctx.lineWidth=1;ctx.stroke();
+  ctx.beginPath();ctx.ellipse(dp.x,dp.y+3.5,3.5,2.2,0,0,Math.PI*2);
+  ctx.fillStyle='#182a38';ctx.fill();ctx.strokeStyle='#1ea8c8';ctx.lineWidth=0.8;ctx.stroke();
+  if(mission&&Math.floor(Date.now()/500)%2){
+    ctx.beginPath();ctx.arc(dp.x-9,dp.y,2,0,Math.PI*2);ctx.fillStyle='#ff2828';ctx.fill();
+    ctx.beginPath();ctx.arc(dp.x+9,dp.y,2,0,Math.PI*2);ctx.fillStyle='#28ff28';ctx.fill();
+  }
+}
+
+function tickSmoke(){
+  ISO_MAP.forEach((row,ri)=>row.forEach((t,ci)=>{
+    if((t===4||t===5)&&Math.random()<0.22){
+      const{x,y}=isoXY(ci,ri,(ISO_HGT[t]||1)*ISO_BH);
+      isoSmokes.push({x:x+(Math.random()-.5)*5,y:y+(Math.random()-.5)*3,vx:(Math.random()-.5)*.35,vy:-.5-Math.random()*.7,life:1,r:3+Math.random()*4});
+    }
+  }));
+  isoSmokes=isoSmokes.filter(s=>s.life>0);
+  isoSmokes.forEach(s=>{s.x+=s.vx;s.y+=s.vy;s.life-=0.011;s.r+=0.07;});
+  if(isoSmokes.length>350)isoSmokes.splice(0,50);
+}
+
+function drawIsoFrame(){
+  const cv=document.getElementById('drone-canvas');if(!cv)return;
+  const ctx=cv.getContext('2d');const W=cv.width,H=cv.height;
+  const bg=ctx.createLinearGradient(0,0,0,H);
+  bg.addColorStop(0,'#04080f');bg.addColorStop(1,'#050e09');
+  ctx.fillStyle=bg;ctx.fillRect(0,0,W,H);
+  const haze=ctx.createLinearGradient(0,0,0,H*0.3);
+  haze.addColorStop(0,'rgba(200,80,30,0.09)');haze.addColorStop(1,'rgba(0,0,0,0)');
+  ctx.fillStyle=haze;ctx.fillRect(0,0,W,H*0.3);
+  // Terrain back→front (painter's algorithm)
+  for(let d=0;d<ISO_COLS+ISO_ROWS-1;d++){
+    for(let col=0;col<ISO_COLS;col++){
+      const row=d-col;if(row<0||row>=ISO_ROWS)continue;
+      const t=ISO_MAP[row][col]||0;
+      const{x,y}=isoXY(col,row);
+      if(t>=2&&t<=3){
+        const gr=ctx.createRadialGradient(x,y+ISO_TH/2,0,x,y+ISO_TH/2,ISO_TW*0.65);
+        gr.addColorStop(0,t===2?'rgba(155,45,12,0.13)':'rgba(35,45,65,0.11)');gr.addColorStop(1,'rgba(0,0,0,0)');
+        ctx.fillStyle=gr;ctx.beginPath();ctx.arc(x,y+ISO_TH/2,ISO_TW*0.65,0,Math.PI*2);ctx.fill();
+      }
+      if(t===4||t===5){
+        isoFlatTile(ctx,col,row,T_TOP[3]);
+        isoChimney(ctx,col,row,ISO_HGT[t]||1);
+      } else {
+        isoFlatTile(ctx,col,row,T_TOP[t]);
+      }
+    }
+  }
+  // Smoke
+  isoSmokes.forEach(s=>{
+    ctx.beginPath();ctx.arc(s.x,s.y,s.r,0,Math.PI*2);
+    ctx.fillStyle=`rgba(185,195,215,${s.life*0.20})`;ctx.fill();
+  });
+  // Waypoints
+  ISO_WPS.forEach((wp,i)=>{
+    const{x,y}=isoXY(wp.col,wp.row);
+    const isT=i===isoWpIdx&&isoMission;
+    const pulse=isT?(0.65+0.35*Math.sin(Date.now()/330)):0.35;
+    ctx.beginPath();ctx.ellipse(x,y+ISO_TH/2,ISO_TW*0.36*pulse,ISO_TH*0.36*pulse,0,0,Math.PI*2);
+    ctx.strokeStyle=isT?`rgba(64,208,232,${pulse})`:'rgba(55,95,155,0.38)';ctx.lineWidth=1.5;ctx.stroke();
+    ctx.fillStyle=isT?'#40d0e8':'#3a6080';ctx.font=(isT?'bold ':'')+'9px monospace';ctx.fillText(wp.name,x-20,y-9);
+  });
+  // Trail
+  if(isoTrail.length>1){
+    ctx.save();ctx.setLineDash([3,6]);ctx.strokeStyle='rgba(64,208,232,0.20)';ctx.lineWidth=1.2;
+    ctx.beginPath();ctx.moveTo(isoTrail[0].x,isoTrail[0].y);
+    isoTrail.forEach(p=>ctx.lineTo(p.x,p.y));ctx.stroke();ctx.restore();
+  }
+  drawDrone3D(ctx,isoCx,isoCy,isoZ,rotorA,isoMission);
+  if(isoMission){
+    ctx.fillStyle='rgba(3,8,18,0.80)';ctx.fillRect(8,8,204,60);
+    ctx.strokeStyle='#1a4060';ctx.lineWidth=1;ctx.strokeRect(8,8,204,60);
+    ctx.fillStyle='#40d0e8';ctx.font='bold 10px monospace';ctx.fillText('▶ MISSION EN COURS',16,26);
+    ctx.fillStyle='#5090a8';ctx.font='9px monospace';
+    ctx.fillText(`COL:${isoCx.toFixed(1)} ROW:${isoCy.toFixed(1)} ALT:${Math.round(isoZ)}m`,16,42);
+    ctx.fillText(`WP → ${ISO_WPS[isoWpIdx]?.name||'RTH'}`,16,57);
+  }
+}
+
+function isoTick(){
+  if(!isoMission)return;
+  const wp=ISO_WPS[isoWpIdx];
+  if(!wp){isoMission=false;document.getElementById('drone-phase').textContent='MISSION COMPLETE';drawIsoFrame();return;}
+  const dx=wp.col-isoCx,dy=wp.row-isoCy,dist=Math.sqrt(dx*dx+dy*dy);
+  rotorA+=0.14;
+  if(dist<0.12){isoWpIdx=(isoWpIdx+1)%ISO_WPS.length;}
+  else{isoCx+=dx*0.013;isoCy+=dy*0.013;isoZ=75+7*Math.sin(Date.now()/700);}
+  const tp=isoXY(isoCx,isoCy,isoZ);
+  isoTrail.push({x:tp.x,y:tp.y});if(isoTrail.length>90)isoTrail.shift();
+  tickSmoke();drawIsoFrame();
+  isoAnim=requestAnimationFrame(isoTick);
+}
+
+async function startDrone(){
+  if(droneWS){droneWS.close();droneWS=null;}
+  if(isoAnim){cancelAnimationFrame(isoAnim);isoAnim=null;}
+  const zone=document.getElementById('drone-zone').value;
+  const missionId='M'+Date.now();
+  isoMission=true;isoCx=0.5;isoCy=0.5;isoWpIdx=0;isoTrail=[];isoSmokes=[];
+  document.getElementById('drone-btn').textContent='En vol...';
+  document.getElementById('drone-btn').disabled=true;
+  initDroneCanvas();isoTick();
+  droneWS=new WebSocket(`ws://localhost:8002/ws/drone/${missionId}?zone_id=${zone}`);
+  droneWS.onmessage=e=>{
+    const p=JSON.parse(e.data);
+    if(p.type==='telemetry'){
+      document.getElementById('drone-phase').textContent=(p.phase||'').toUpperCase();
+      const bat=p.battery_pct||100;
+      document.getElementById('bat-fill').style.width=bat+'%';
+      document.getElementById('bat-fill').style.background=bat>40?'linear-gradient(90deg,#1a5030,#40c870)':bat>20?'linear-gradient(90deg,#604010,#e88040)':'linear-gradient(90deg,#601010,#e85050)';
+      document.getElementById('bat-txt').textContent='Batterie: '+bat+'%';
+      document.getElementById('d-alt').textContent=p.position?.altitude_m||'—';
+      document.getElementById('d-spd').textContent=p.sensors?.speed_m_s||'—';
+      document.getElementById('d-so2').textContent=p.sensors?.air?.so2_ug_m3||'—';
+      if(p.ai_results){
+        const ai=p.ai_results;
+        document.getElementById('drone-ai').innerHTML=`
+          <div style="margin-bottom:8px"><b style="color:#60c0d0">Segmentation U-Net</b><br>
+          Classe: <b>${ai.segmentation?.class_name}</b> — Conf: ${Math.round((ai.segmentation?.confidence||0)*100)}%<br>
+          <span style="color:${ai.segmentation?.is_contaminated?'#e85050':'#40c870'}">${ai.segmentation?.is_contaminated?'CONTAMINATION DÉTECTÉE':'Zone saine'}</span></div>
+          <div style="margin-bottom:8px"><b style="color:#60c0d0">Thermique FLIR</b><br>
+          T moy: ${ai.thermal?.temp_mean_c}°C — Δ: +${ai.thermal?.anomaly_delta_c}°C<br>
+          <span style="color:${ai.thermal?.anomaly_detected?'#e85050':'#40c870'}">${ai.thermal?.anomaly_detected?'ANOMALIE THERMIQUE':'Normal'}</span></div>
+          <div style="font-size:.72rem;color:#3a6080">Frame ${ai.frame_id} | 5cm/px | GPU: ${p.jetson_status?.gpu_pct||'—'}%</div>`;
+      }
+    }
+    if(p.type==='mission_end'){
+      isoMission=false;if(isoAnim){cancelAnimationFrame(isoAnim);isoAnim=null;}
+      drawIsoFrame();
+      document.getElementById('drone-phase').textContent='MISSION COMPLETE';
+      document.getElementById('drone-btn').textContent='Lancer Mission';
+      document.getElementById('drone-btn').disabled=false;
+    }
+  };
+  droneWS.onerror=()=>{
+    isoMission=false;if(isoAnim){cancelAnimationFrame(isoAnim);isoAnim=null;}
+    document.getElementById('drone-phase').textContent='ERREUR WS';
+    document.getElementById('drone-btn').textContent='Lancer Mission';
+    document.getElementById('drone-btn').disabled=false;
+  };
+}
+
+// ═══════════════════════════════════════════════════
+// THERMAL FLIR
+// ═══════════════════════════════════════════════════
+// FLIR Iron palette: black → dark purple → red → orange → yellow → white
+const FLIR_PALETTE=[
+  [0,0,0],[30,0,50],[80,0,80],[140,0,60],[200,20,0],[240,80,0],
+  [255,160,0],[255,220,80],[255,255,160],[255,255,255]
+];
+function flirColor(norm){
+  const n=FLIR_PALETTE.length-1;
+  const idx=Math.min(norm*n,n-0.001);
+  const i=Math.floor(idx),t=idx-i;
+  const a=FLIR_PALETTE[i],b=FLIR_PALETTE[Math.min(i+1,n)];
+  return[Math.round(a[0]+t*(b[0]-a[0])),Math.round(a[1]+t*(b[1]-a[1])),Math.round(a[2]+t*(b[2]-a[2]))];
+}
+
+function drawPalette(){
+  const cv=document.getElementById('palette-legend');
+  if(!cv)return;
+  const ctx=cv.getContext('2d');
+  for(let x=0;x<200;x++){
+    const [r,g,b]=flirColor(x/199);
+    ctx.fillStyle=`rgb(${r},${g},${b})`;
+    ctx.fillRect(x,0,1,20);
+  }
+}
+
+async function loadThermal(){
+  const zone=document.getElementById('therm-zone').value;
+  const infoEl=document.getElementById('thermal-info');
+  infoEl.innerHTML='<div class="loading"><span class="spin">⟳</span> Génération image thermique...</div>';
+  try{
+    const d=await api(`/drone/thermal?lat=33.852&lon=9.978&zone_id=${zone}`);
+
+    if(d.image_b64){
+      // ── PIL/scipy FLIR Iron PNG from backend ──
+      const img=document.getElementById('thermal-img');
+      img.src='data:image/png;base64,'+d.image_b64;
+      img.style.display='block';
+      document.getElementById('thermal-canvas').style.display='none';
+
+      // HUD overlay on transparent canvas on top
+      const hud=document.getElementById('thermal-hud');
+      const DW=hud.width,DH=hud.height;
+      const ctx=hud.getContext('2d');
+      ctx.clearRect(0,0,DW,DH);
+
+      // Scanlines
+      for(let y=0;y<DH;y+=3){ctx.fillStyle='rgba(0,0,0,0.04)';ctx.fillRect(0,y,DW,1);}
+      // Vignette
+      const vig=ctx.createRadialGradient(DW/2,DH/2,DW*0.32,DW/2,DH/2,DW*0.72);
+      vig.addColorStop(0,'rgba(0,0,0,0)');vig.addColorStop(1,'rgba(0,0,0,0.38)');
+      ctx.fillStyle=vig;ctx.fillRect(0,0,DW,DH);
+      // Frame
+      ctx.strokeStyle='rgba(64,208,232,0.25)';ctx.lineWidth=1.5;ctx.strokeRect(1,1,DW-2,DH-2);
+      // HUD text
+      ctx.fillStyle='rgba(64,208,232,0.80)';ctx.font='bold 10px monospace';
+      ctx.fillText(`FLIR ${zone.toUpperCase()} ${new Date().toLocaleTimeString('fr-FR')}`,8,16);
+      ctx.fillText(`ANOMALY: ${d.anomaly_detected?'+'+d.anomaly_delta_c+'°C':'NONE'}`,DW-168,16);
+      ctx.fillStyle='rgba(255,255,100,0.72)';ctx.font='9px monospace';
+      ctx.fillText(`${d.temp_min_c}°C`,6,DH-6);
+      ctx.fillText(`${d.temp_max_c}°C`,DW-46,DH-6);
+      // Hotspot indicator (centre-weighted for GCT zone)
+      const hx=DW*0.42,hy=DH*0.38;
+      ctx.strokeStyle='rgba(255,255,100,0.85)';ctx.lineWidth=1;ctx.setLineDash([4,4]);
+      ctx.beginPath();ctx.moveTo(hx-20,hy);ctx.lineTo(hx+20,hy);ctx.stroke();
+      ctx.beginPath();ctx.moveTo(hx,hy-20);ctx.lineTo(hx,hy+20);ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.beginPath();ctx.arc(hx,hy,10,0,Math.PI*2);
+      ctx.strokeStyle='rgba(255,255,100,0.55)';ctx.stroke();
+
+    } else {
+      // Fallback: grid-based canvas rendering
+      const grid=d.full_grid;
+      if(!grid||!grid.length){infoEl.textContent='Pas de données';return;}
+      const rows=grid.length,cols=grid[0].length;
+      const flat=grid.flat();
+      const minT=Math.min(...flat),maxT=Math.max(...flat),range=maxT-minT||1;
+      const tmp=document.createElement('canvas');tmp.width=cols;tmp.height=rows;
+      const tCtx=tmp.getContext('2d');const imgData=tCtx.createImageData(cols,rows);
+      for(let r=0;r<rows;r++) for(let c=0;c<cols;c++){
+        const norm=(grid[r][c]-minT)/range;
+        const[R,G,B]=flirColor(norm);const idx=(r*cols+c)*4;
+        imgData.data[idx]=R;imgData.data[idx+1]=G;imgData.data[idx+2]=B;imgData.data[idx+3]=255;
+      }
+      tCtx.putImageData(imgData,0,0);
+      const cv=document.getElementById('thermal-canvas');
+      cv.width=384;cv.height=384;cv.style.display='block';
+      document.getElementById('thermal-img').style.display='none';
+      const ctx=cv.getContext('2d');
+      ctx.imageSmoothingEnabled=true;ctx.imageSmoothingQuality='high';
+      ctx.drawImage(tmp,0,0,384,384);
+    }
+
+    drawPalette();
+    infoEl.innerHTML=`
+      <div style="margin-bottom:8px"><b style="color:#40d0e8">Résultats IA Thermique</b></div>
+      <div style="line-height:2.1">
+        T min: <b>${d.temp_min_c}°C</b><br>
+        T max: <b>${d.temp_max_c}°C</b><br>
+        T moy: <b>${d.temp_mean_c}°C</b><br>
+        Anomalie: <b style="color:${d.anomaly_detected?'#e85050':'#40c870'}">${d.anomaly_detected?'+'+d.anomaly_delta_c+'°C DÉTECTÉE':'Aucune'}</b><br>
+        Hotspots: <b style="color:#e88040">${d.hotspot_pct}%</b><br>
+        Zone: <b>${d.zone_id}</b>
+      </div>
+      <div style="margin-top:10px;font-size:.75rem;color:#3a6080">
+        Rendu: Gaussian blur scipy + PIL FLIR Iron colormap → LANCZOS 512×512 PNG.
+      </div>
+    `;
+  }catch(e){infoEl.innerHTML=err(e);}
+}
+
+// ═══════════════════════════════════════════════════
+// MODELS CHECK
+// ═══════════════════════════════════════════════════
+async function checkModels(){
+  const models=[
+    {name:'U-Net Sol (EfficientNet-B3)',file:'unet_finetuned.pth',metric:'val_acc=88.8%',ep:'/sol/gct'},
+    {name:'U-Net Eau (EfficientNet-B3)',file:'unet_eau_final.pth',metric:'val_acc=77.2%',ep:'/eau/mer'},
+    {name:'LSTM Sol (BiLSTM h=64)',file:'lstm_best.pth',metric:'MSE=0.019',ep:'/sol/gct/predict'},
+    {name:'LSTM Eau (BiLSTM h=64)',file:'lstm_eau_best.pth',metric:'MSE=0.032',ep:'/eau/mer/predict'},
+    {name:'LSTM Air (BiLSTM h=128)',file:'lstm_air_best.pth',metric:'MSE=0.012',ep:'/air/gct/predict'},
+    {name:'XGBoost Air Classifier',file:'xgb_air.pkl',metric:'acc=86.9%, 7 features',ep:'/air/gct/realtime'},
+  ];
+  const results=await Promise.allSettled(models.map(m=>fetch(API+m.ep).then(r=>({ok:r.ok,source:null})
+    .then? r.json().then(d=>({ok:r.ok,source:d.source||'loaded'})):({ok:r.ok,source:'—'}))));
+  document.getElementById('models-list').innerHTML=models.map((m,i)=>{
+    const ok=results[i].status==='fulfilled'&&results[i].value?.ok;
+    return`<div class="model-row">
+      <div><div style="font-size:.88rem">${m.name}</div><div style="font-size:.74rem;color:#3a6080">${m.file} — ${m.metric}</div></div>
+      <span class="mbadge ${ok?'ok':'err'}">${ok?'CHARGE':'ERREUR'}</span>
+    </div>`;
+  }).join('');
+}
+
+// ═══════════════════════════════════════════════════
+// CHATBOT VOCAL MULTILINGUE
+// ═══════════════════════════════════════════════════
+let cbOpen=false, cbStarted=false, cbMsgId=0, cbHist=[], cbRec=null, cbAudio=null;
+const CB_LANG_MAP={fr:'fr-FR',en:'en-US',ar:'ar-SA'};
+const CB_LABELS={
+  fr:{fab:'Parler à l\'IA',sub:'Surveillance environnementale — Gabès',speak:'En cours de parole...',listen:'Écoute en cours...',think:'En réflexion...'},
+  en:{fab:'Talk to AI',sub:'Environmental monitoring — Gabès',speak:'Speaking...',listen:'Listening...',think:'Thinking...'},
+  ar:{fab:'تحدث مع الذكاء الاصطناعي',sub:'مراقبة بيئية — قابس',speak:'جارٍ الكلام...',listen:'جارٍ الاستماع...',think:'جارٍ التفكير...'}
+};
+
+function cbLang(){return document.getElementById('cb-lang-sel').value||'fr';}
+function cbL(){return CB_LABELS[cbLang()]||CB_LABELS.fr;}
+
+function cbToggle(){
+  cbOpen=!cbOpen;
+  document.getElementById('cb-panel').classList.toggle('cbopen',cbOpen);
+  if(cbOpen&&!cbStarted){cbStarted=true;setTimeout(cbWelcome,320);}
+  if(!cbOpen){cbStopSpeech();}
+}
+
+function cbLangChange(){
+  const l=cbL();
+  document.getElementById('cb-fab-lbl').textContent=l.fab;
+  document.getElementById('cb-subtitle').textContent=l.sub;
+  document.getElementById('cb-inp').placeholder=cbLang()==='ar'?'اكتب أو تحدث...':'Écrivez ou parlez...';
+  document.getElementById('cb-inp').dir=cbLang()==='ar'?'rtl':'ltr';
+}
+
+async function cbWelcome(){
+  const lang=cbLang();
+  // Fetch live dashboard data to include in welcome prompt
+  let dashCtx='';
+  try{
+    const dash=await api('/dashboard');
+    const gct=dash.zones?.gct;
+    const air=dash.air_quality;
+    const meteo=dash.meteo;
+    if(lang==='ar'){
+      dashCtx=`بيانات حية الآن: درجة الحرارة ${meteo?.temperature_2m??'—'}°م، سرعة الرياح ${meteo?.windspeed_10m??'—'} كم/س، AQI ${air?.aqi??'—'}، SO₂ ${air?.so2??'—'} µg/m³، PM10 ${air?.pm10??'—'} µg/m³، صحة التربة GCT ${gct?.sol?.health_score??'—'}/100، نسبة التلوث ${gct?.sol?.contamination_pct??'—'}%، مستوى التنبيه: ${air?.alert_level??'—'}. `;
+    } else if(lang==='en'){
+      dashCtx=`Live data: Temperature ${meteo?.temperature_2m??'—'}°C, Wind ${meteo?.windspeed_10m??'—'} km/h, AQI ${air?.aqi??'—'}, SO₂ ${air?.so2??'—'} µg/m³, PM10 ${air?.pm10??'—'} µg/m³, GCT soil health ${gct?.sol?.health_score??'—'}/100, contamination ${gct?.sol?.contamination_pct??'—'}%, alert level: ${air?.alert_level??'—'}. `;
+    } else {
+      dashCtx=`Données en direct: Température ${meteo?.temperature_2m??'—'}°C, Vent ${meteo?.windspeed_10m??'—'} km/h, AQI ${air?.aqi??'—'}, SO₂ ${air?.so2??'—'} µg/m³, PM10 ${air?.pm10??'—'} µg/m³, santé sol GCT ${gct?.sol?.health_score??'—'}/100, contamination ${gct?.sol?.contamination_pct??'—'}%, alerte: ${air?.alert_level??'—'}. `;
+    }
+  }catch(_){}
+  const prompts={
+    fr:`${dashCtx}Tu es GabèsEye, assistant IA de surveillance environnementale à Gabès, Tunisie. En utilisant ces données réelles, présente-toi et donne un résumé précis de la situation actuelle (qualité de l'air, santé du sol, niveau d'alerte) en 3-4 phrases. Cite les chiffres, sois rassurant si possible.`,
+    en:`${dashCtx}You are GabèsEye, an AI environmental monitoring assistant for Gabès, Tunisia. Using this live data, introduce yourself and give a concise summary of the current situation (air quality, soil health, alert level) in 3-4 sentences. Quote the numbers, be reassuring where possible.`,
+    ar:`${dashCtx}أنت GabèsEye، مساعد ذكاء اصطناعي لمراقبة البيئة في قابس، تونس. باستخدام هذه البيانات الحية، قدم نفسك وأعطِ ملخصاً دقيقاً للوضع الحالي (جودة الهواء، صحة التربة، مستوى التنبيه) في 3-4 جمل. اذكر الأرقام الحقيقية. استخدم العربية الفصحى الواضحة.`
+  };
+  cbAddMsg('bot',cbL().think,true);
+  try{
+    const d=await post('/agent/chat',{message:prompts[lang],history:[],role:'citoyen',langue:lang,zone_id:'gct'});
+    cbUpdateLast(d.response);
+    cbHist=[{role:'assistant',content:d.response}];
+    cbSpeak(d.response);
+  }catch(e){
+    const fallbacks={fr:'Bonjour ! Je suis GabèsEye IA. Comment puis-je vous aider ?',en:'Hello! I am GabèsEye AI. How can I help you?',ar:'مرحباً! أنا GabèsEye الذكاء الاصطناعي. كيف يمكنني مساعدتك؟'};
+    cbUpdateLast(fallbacks[lang]);
+    cbSpeak(fallbacks[lang]);
+  }
+}
+
+async function cbSpeak(text){
+  if(!text)return;
+  cbStopSpeech();
+  const lang=cbLang();
+  const bar=document.getElementById('cb-voice-bar');
+  const lbl=document.getElementById('cb-voice-lbl');
+  bar.classList.add('speaking');
+  lbl.textContent=cbL().speak;
+  try{
+    // Strip markdown/HTML tags for cleaner TTS
+    const clean=text.replace(/<[^>]+>/g,'').replace(/[*_`#]/g,'').trim();
+    const resp=await fetch(`${API}/api/tts?text=${encodeURIComponent(clean)}&lang=${lang}`);
+    if(!resp.ok)throw new Error('TTS HTTP '+resp.status);
+    const blob=await resp.blob();
+    const url=URL.createObjectURL(blob);
+    const audio=new Audio(url);
+    cbAudio=audio;
+    audio.onended=audio.onerror=()=>{
+      bar.classList.remove('speaking');
+      URL.revokeObjectURL(url);
+      if(cbAudio===audio)cbAudio=null;
+    };
+    audio.play();
+  }catch(e){
+    bar.classList.remove('speaking');
+  }
+}
+
+function cbStopSpeech(){
+  if(cbAudio){cbAudio.pause();cbAudio.currentTime=0;cbAudio=null;}
+  document.getElementById('cb-voice-bar').classList.remove('speaking');
+}
+
+function cbMicToggle(){
+  const btn=document.getElementById('cb-mic');
+  // Stop active recording
+  if(cbRec){cbRec.stop();return;}
+  cbStopSpeech();
+  if(!navigator.mediaDevices?.getUserMedia){
+    alert('Microphone non disponible. Vérifiez les permissions du navigateur.');return;
+  }
+  navigator.mediaDevices.getUserMedia({audio:true}).then(stream=>{
+    const mimeType=MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
+      ?'audio/webm;codecs=opus':'audio/webm';
+    const rec=new MediaRecorder(stream,{mimeType});
+    cbRec=rec;
+    const chunks=[];
+    const bar=document.getElementById('cb-voice-bar');
+    const lbl=document.getElementById('cb-voice-lbl');
+    bar.classList.add('speaking');
+    lbl.textContent=cbL().listen;
+    btn.classList.add('recording');
+    rec.ondataavailable=e=>{if(e.data.size>0)chunks.push(e.data);};
+    rec.onstop=async()=>{
+      stream.getTracks().forEach(t=>t.stop());
+      btn.classList.remove('recording');
+      cbRec=null;
+      const blob=new Blob(chunks,{type:mimeType});
+      lbl.textContent='Transcription...';
+      try{
+        const form=new FormData();
+        form.append('audio',blob,'audio.webm');
+        const resp=await fetch(`${API}/api/transcribe?lang=${cbLang()}`,{method:'POST',body:form});
+        bar.classList.remove('speaking');
+        if(resp.ok){
+          const data=await resp.json();
+          if(data.text){document.getElementById('cb-inp').value=data.text;setTimeout(cbSend,120);}
+        }
+      }catch(_){bar.classList.remove('speaking');}
+    };
+    rec.start();
+    // Auto-stop after 30 seconds
+    setTimeout(()=>{if(cbRec===rec)rec.stop();},30000);
+  }).catch(()=>{
+    alert('Microphone non accessible. Activez les permissions du site dans votre navigateur.');
+  });
+}
+
+async function cbSend(){
+  const inp=document.getElementById('cb-inp');
+  const msg=inp.value.trim();
+  if(!msg)return;
+  inp.value='';
+  const lang=cbLang();
+  cbStopSpeech();
+  cbAddMsg('user',msg);
+  cbHist.push({role:'user',content:msg});
+  cbAddMsg('bot',cbL().think,true);
+  try{
+    const d=await post('/agent/chat',{message:msg,history:cbHist.slice(-8),role:'citoyen',langue:lang,zone_id:'gct'});
+    cbUpdateLast(d.response);
+    cbHist.push({role:'assistant',content:d.response});
+    cbSpeak(d.response);
+  }catch(e){
+    const fallbacks={fr:'Erreur de connexion. Réessayez.',en:'Connection error. Please retry.',ar:'خطأ في الاتصال. حاول مرة أخرى.'};
+    cbUpdateLast(fallbacks[lang]);
+  }
+}
+
+function cbAddMsg(role,text,think=false){
+  const id='cbm'+(cbMsgId++);
+  const isAr=cbLang()==='ar';
+  const box=document.getElementById('cb-msgs');
+  if(role==='user'){
+    box.innerHTML+=`<div class="cb-msg-u"><div class="cb-bub-u" style="direction:${isAr?'rtl':'ltr'}">${text}</div></div>`;
+  } else {
+    box.innerHTML+=`<div class="cb-msg-b" id="${id}"><div class="cb-bub-b${think?' thinking':''}" style="direction:${isAr?'rtl':'ltr'}">${text}</div></div>`;
+  }
+  box.scrollTop=box.scrollHeight;
+  return id;
+}
+
+function cbUpdateLast(text){
+  const msgs=document.querySelectorAll('#cb-msgs .cb-msg-b');
+  if(!msgs.length)return;
+  const last=msgs[msgs.length-1];
+  const bub=last.querySelector('.cb-bub-b');
+  const isAr=cbLang()==='ar';
+  bub.classList.remove('thinking');
+  bub.innerHTML=text;
+  bub.style.direction=isAr?'rtl':'ltr';
+  document.getElementById('cb-msgs').scrollTop=9999;
+}
+
+// ── Init ──
+loadDash();
+drawPalette();
+initMap();
+</script>
+</body>
+</html>
