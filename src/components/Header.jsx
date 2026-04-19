@@ -28,6 +28,7 @@ const Header = () => {
     { name: 'Carte', path: '/carte' },
     { name: 'Dashboard', path: '/dashboard' },
     { name: 'Alert', path: '/alertes' },
+    { name: 'Drone', path: '/drone' },
   ];
 
   return (

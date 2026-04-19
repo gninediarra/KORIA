@@ -7,6 +7,8 @@ import Alerts from './pages/Alerts';
 import Overview from './pages/Overview';
 import SignIn from './pages/SignIn';
 import SignUp from './pages/SignUp';
+import DronePage from './pages/DronePage';
+import ChatBot from './components/ChatBot';
 import Footer from './components/Footer';
 import ThreeBackground from './components/ThreeBackground';
 
@@ -45,11 +47,13 @@ const AppContent = () => {
             <Route path="/carte" element={<MapPage />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/alertes" element={<Alerts />} />
+            <Route path="/drone" element={<DronePage />} />
             <Route path="/signin" element={<SignIn />} />
             <Route path="/signup" element={<SignUp />} />
           </Routes>
         </main>
         <Footer />
+        <ChatBot />
       </div>
     </div>
   );
