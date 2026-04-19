@@ -1,0 +1,1 @@
+{"zone_id": "oasis", "type": "eau", "timestamp": "2026-04-19T07:53:29.204337", "source": "simulation", "turbidite": 0.1575, "contamination_pct": 13.8, "anomaly_pct": 9.0, "status": "vert", "indices": {"NDWI": 0.142, "Turbidite": 0.1575, "NDCI": 0.0761, "SPM": 0.1057}, "anomaly_pixels": 50144, "total_pixels": 560000}

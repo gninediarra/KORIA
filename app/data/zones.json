@@ -1,0 +1,81 @@
+{
+  "zones": {
+    "gct": {
+      "id": "gct",
+      "nom": "Zone GCT / Industrielle",
+      "nom_ar": "\u0645\u0646\u0637\u0642\u0629 \u0627\u0644\u0645\u062c\u0645\u0639 \u0627\u0644\u0643\u064a\u0645\u064a\u0627\u0626\u064a",
+      "nom_fr": "Zone Industrielle GCT",
+      "bbox": [9.85, 33.78, 10.05, 33.92],
+      "centre": [33.85, 9.95],
+      "superficie_km2": 18.4,
+      "population": 12000,
+      "risque_principal": "contamination_phosphate",
+      "couleur": "#e74c3c",
+      "description": "Zone d'extraction et traitement des phosphates. Forte concentration en m\u00e9taux lourds, SO\u2082 et poussi\u00e8res."
+    },
+    "ville": {
+      "id": "ville",
+      "nom": "Centre-Ville Gab\u00e8s",
+      "nom_ar": "\u0648\u0633\u0637 \u0645\u062f\u064a\u0646\u0629 \u0642\u0627\u0628\u0633",
+      "nom_fr": "Centre-Ville de Gab\u00e8s",
+      "bbox": [9.95, 33.85, 10.10, 33.98],
+      "centre": [33.88, 10.02],
+      "superficie_km2": 12.1,
+      "population": 90000,
+      "risque_principal": "pollution_atmospherique",
+      "couleur": "#f39c12",
+      "description": "Zone r\u00e9sidentielle et commerciale. Exposition chronique aux polluants industriels selon les vents dominants."
+    },
+    "mer": {
+      "id": "mer",
+      "nom": "Littoral / Golfe de Gab\u00e8s",
+      "nom_ar": "\u0627\u0644\u0634\u0631\u064a\u0637 \u0627\u0644\u0633\u0627\u062d\u0644\u064a / \u062e\u0644\u064a\u062c \u0642\u0627\u0628\u0633",
+      "nom_fr": "Littoral du Golfe de Gab\u00e8s",
+      "bbox": [10.05, 33.75, 10.25, 34.05],
+      "centre": [33.90, 10.15],
+      "superficie_km2": 45.2,
+      "population": 5000,
+      "risque_principal": "pollution_marine",
+      "couleur": "#3498db",
+      "description": "Zone de p\u00eache artisanale. Contamination par rejets industriels et agricoles. Turbidit\u00e9 \u00e9lev\u00e9e."
+    },
+    "oasis": {
+      "id": "oasis",
+      "nom": "Oasis de Gab\u00e8s",
+      "nom_ar": "\u0648\u0627\u062d\u0629 \u0642\u0627\u0628\u0633",
+      "nom_fr": "Oasis de Gab\u00e8s",
+      "bbox": [9.88, 33.87, 10.00, 33.95],
+      "centre": [33.91, 9.94],
+      "superficie_km2": 6.8,
+      "population": 8000,
+      "risque_principal": "degradation_sol",
+      "couleur": "#27ae60",
+      "description": "Oasis mill\u00e9naire unique en milieu urbain. D\u00e9gradation progressive du sol et de la nappe phr\u00e9atique."
+    }
+  },
+  "bbox_global": {
+    "sol": [9.85, 33.78, 10.25, 34.05],
+    "eau": [9.85, 33.50, 11.00, 34.10],
+    "air": [9.85, 33.78, 10.25, 34.05]
+  },
+  "sources_pollution": [
+    {
+      "id": "cheminee_gct_1",
+      "nom": "Chemin\u00e9e GCT Principale",
+      "lat": 33.852,
+      "lon": 9.978,
+      "hauteur_m": 120,
+      "debit_so2_g_s": 85.0,
+      "actif": true
+    },
+    {
+      "id": "cheminee_gct_2",
+      "nom": "Chemin\u00e9e GCT Secondaire",
+      "lat": 33.848,
+      "lon": 9.965,
+      "hauteur_m": 80,
+      "debit_so2_g_s": 45.0,
+      "actif": true
+    }
+  ]
+}

@@ -1,0 +1,1 @@
+{"zone_id": "gct", "type": "eau", "timestamp": "2026-04-19T08:01:27.129388", "source": "simulation", "turbidite": 0.6423, "contamination_pct": 54.3, "anomaly_pct": 35.3, "status": "rouge", "indices": {"NDWI": 0.1441, "Turbidite": 0.6423, "NDCI": 0.0871, "SPM": 0.1234}, "anomaly_pixels": 197759, "total_pixels": 560000}
