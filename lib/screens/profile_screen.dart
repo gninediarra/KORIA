@@ -38,8 +38,6 @@ class ProfileScreen extends StatelessWidget {
         children: [
           _buildProfileCard(context, user),
           const SizedBox(height: 16),
-          _buildTokenCard(context, user, l),
-          const SizedBox(height: 16),
           _buildStatsRow(context, app, user, l),
           const SizedBox(height: 20),
           _buildNotifSection(context),
@@ -117,136 +115,7 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildTokenCard(
-      BuildContext context, AppUser user, String Function(String) l) {
-    final c = AdaptiveColors.of(context);
-    const ect = Color(0xFF00E676);
-    return Container(
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            ect.withValues(alpha: 0.07),
-            AppColors.cyan.withValues(alpha: 0.05),
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: ect.withValues(alpha: 0.25)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Balance
-          Row(
-            children: [
-              Container(
-                width: 46,
-                height: 46,
-                decoration: BoxDecoration(
-                  color: ect.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: ect.withValues(alpha: 0.35)),
-                ),
-                child: const Icon(Icons.token_rounded, color: ect, size: 26),
-              ),
-              const SizedBox(width: 14),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(l('profile_tokens'),
-                      style: GoogleFonts.exo2(
-                          fontSize: 12, color: c.textSecondary)),
-                  Text(
-                    '${user.ecoTokens} ECT',
-                    style: GoogleFonts.exo2(
-                        fontSize: 28,
-                        fontWeight: FontWeight.w800,
-                        color: ect),
-                  ),
-                ],
-              ),
-              const Spacer(),
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                decoration: BoxDecoration(
-                  color: ect.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Text('BLOCKCHAIN',
-                    style: GoogleFonts.exo2(
-                        fontSize: 9,
-                        fontWeight: FontWeight.w700,
-                        color: ect,
-                        letterSpacing: 1)),
-              ),
-            ],
-          ),
 
-          // Wallet address
-          if (user.walletAddress != null &&
-              user.walletAddress!.length >= 10) ...[
-            const SizedBox(height: 12),
-            Divider(color: ect.withValues(alpha: 0.2), height: 0),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Icon(Icons.account_balance_wallet_outlined,
-                    color: c.textHint, size: 14),
-                const SizedBox(width: 6),
-                Text(l('profile_wallet'),
-                    style: GoogleFonts.inter(
-                        fontSize: 12, color: c.textSecondary)),
-                const Spacer(),
-                Text(
-                  '${user.walletAddress!.substring(0, 6)}…${user.walletAddress!.substring(user.walletAddress!.length - 4)}',
-                  style: GoogleFonts.exo2(
-                      fontSize: 12,
-                      color: AppColors.cyan,
-                      fontWeight: FontWeight.w600),
-                ),
-              ],
-            ),
-          ],
-
-          const SizedBox(height: 14),
-          Divider(color: ect.withValues(alpha: 0.2), height: 0),
-          const SizedBox(height: 12),
-
-          Text(l('profile_earn_title'),
-              style: GoogleFonts.exo2(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w700,
-                  color: c.textSecondary,
-                  letterSpacing: 0.3)),
-          const SizedBox(height: 10),
-
-          _EarnItem(
-              icon: Icons.report_problem_outlined,
-              color: AppColors.orange,
-              label: l('profile_earn_anomaly'),
-              tokens: '+50 ECT'),
-          _EarnItem(
-              icon: Icons.cleaning_services_outlined,
-              color: AppColors.cyan,
-              label: l('profile_earn_cleanup'),
-              tokens: '+100 ECT'),
-          _EarnItem(
-              icon: Icons.how_to_vote_outlined,
-              color: AppColors.green,
-              label: l('profile_earn_vote'),
-              tokens: '−20 ECT'),
-          _EarnItem(
-              icon: Icons.route_outlined,
-              color: AppColors.green,
-              label: l('profile_earn_route'),
-              tokens: '+15 ECT'),
-        ],
-      ),
-    );
-  }
 
   Widget _buildStatsRow(BuildContext context, AppProvider app, AppUser user,
       String Function(String) l) {
@@ -383,42 +252,6 @@ class ProfileScreen extends StatelessWidget {
           shape:
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
         ),
-      ),
-    );
-  }
-}
-
-class _EarnItem extends StatelessWidget {
-  final IconData icon;
-  final Color color;
-  final String label;
-  final String tokens;
-
-  const _EarnItem(
-      {required this.icon,
-      required this.color,
-      required this.label,
-      required this.tokens});
-
-  @override
-  Widget build(BuildContext context) {
-    final c = AdaptiveColors.of(context);
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: Row(
-        children: [
-          Icon(icon, color: color, size: 16),
-          const SizedBox(width: 8),
-          Expanded(
-              child: Text(label,
-                  style: GoogleFonts.inter(
-                      fontSize: 12, color: c.textSecondary))),
-          Text(tokens,
-              style: GoogleFonts.exo2(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w700,
-                  color: color)),
-        ],
       ),
     );
   }

@@ -1,3 +1,4 @@
+import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_map/flutter_map.dart';
@@ -121,6 +122,13 @@ class _MapScreenState extends State<MapScreen> {
             right: 16,
             child: _DroneMiniInfo(app: app),
           ),
+
+          Positioned(
+            bottom: 160,
+            left: 0,
+            right: 0,
+            child: _ZoneStatusStrip(zones: app.zones, l: l),
+          ),
         ],
       ),
     );
@@ -169,42 +177,133 @@ class _MapScreenState extends State<MapScreen> {
     final color = AppColors.statusColor(zone.status);
     return Marker(
       point: zone.center,
-      width: 140,
-      height: 36,
+      width: 130,
+      height: 44,
       child: GestureDetector(
         onTap: () => Navigator.push(
           context,
           MaterialPageRoute(builder: (_) => ZoneDetailScreen(zone: zone)),
         ),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-          decoration: BoxDecoration(
-            color: c.surface.withValues(alpha: 0.9),
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: color.withValues(alpha: 0.5)),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 7,
-                height: 7,
-                decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+        child: Column(
+          children: [
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.92),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.white.withValues(alpha: 0.4), width: 0.8),
+                boxShadow: [BoxShadow(color: color.withValues(alpha: 0.5), blurRadius: 6)],
               ),
-              const SizedBox(width: 5),
-              Expanded(
-                child: Text(
-                  zone.name.split(' ').take(2).join(' '),
-                  style: GoogleFonts.exo2(
-                      fontSize: 10,
-                      fontWeight: FontWeight.w600,
-                      color: c.textPrimary),
-                  overflow: TextOverflow.ellipsis,
-                ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 8, height: 8,
+                    decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
+                  ),
+                  const SizedBox(width: 5),
+                  Flexible(
+                    child: Text(
+                      zone.name.split(' ').take(2).join(' '),
+                      style: GoogleFonts.exo2(
+                          fontSize: 10, fontWeight: FontWeight.w700, color: Colors.white),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
               ),
-            ],
-          ),
+            ),
+            // triangle pointer
+            CustomPaint(painter: _TrianglePainter(color: color), size: const Size(10, 5)),
+          ],
         ),
+      ),
+    );
+  }
+}
+
+class _TrianglePainter extends CustomPainter {
+  final Color color;
+  const _TrianglePainter({required this.color});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()..color = color.withValues(alpha: 0.92);
+    final path = ui.Path()
+      ..moveTo(0, 0)
+      ..lineTo(size.width, 0)
+      ..lineTo(size.width / 2, size.height)
+      ..close();
+    canvas.drawPath(path, paint);
+  }
+
+  @override
+  bool shouldRepaint(_TrianglePainter old) => old.color != color;
+}
+
+class _ZoneStatusStrip extends StatelessWidget {
+  final List<Zone> zones;
+  final String Function(String) l;
+  const _ZoneStatusStrip({required this.zones, required this.l});
+
+  @override
+  Widget build(BuildContext context) {
+    if (zones.isEmpty) return const SizedBox.shrink();
+    final c = AdaptiveColors.of(context);
+    return SizedBox(
+      height: 56,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        itemCount: zones.length,
+        separatorBuilder: (context, i) => const SizedBox(width: 8),
+        itemBuilder: (context, i) {
+          final zone = zones[i];
+          final color = AppColors.statusColor(zone.status);
+          return GestureDetector(
+            onTap: () => Navigator.push(context,
+                MaterialPageRoute(builder: (_) => ZoneDetailScreen(zone: zone))),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: c.surface.withValues(alpha: 0.95),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: color.withValues(alpha: 0.5), width: 1.5),
+                boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.15), blurRadius: 4)],
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 12, height: 12,
+                    decoration: BoxDecoration(
+                      color: color,
+                      borderRadius: BorderRadius.circular(3),
+                      boxShadow: [BoxShadow(color: color.withValues(alpha: 0.5), blurRadius: 4)],
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        zone.name.split(' ').take(2).join(' '),
+                        style: GoogleFonts.exo2(
+                            fontSize: 11, fontWeight: FontWeight.w700, color: c.textPrimary),
+                      ),
+                      Text(
+                        zone.status.toUpperCase(),
+                        style: GoogleFonts.exo2(
+                            fontSize: 9, fontWeight: FontWeight.w600, color: color, letterSpacing: 0.5),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
       ),
     );
   }

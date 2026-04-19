@@ -72,7 +72,7 @@ class AppUser {
   final String? quartier;
   final String? parcelle;
   final String? walletAddress;
-  final int ecoTokens;
+  final int nadhafaPoints;
 
   const AppUser({
     required this.id,
@@ -82,7 +82,7 @@ class AppUser {
     this.quartier,
     this.parcelle,
     this.walletAddress,
-    this.ecoTokens = 0,
+    this.nadhafaPoints = 0,
   });
 
   factory AppUser.fromJson(Map<String, dynamic> json) => AppUser(
@@ -96,7 +96,7 @@ class AppUser {
         quartier: json['quartier'] as String?,
         parcelle: json['parcelle'] as String?,
         walletAddress: json['wallet_address'] as String?,
-        ecoTokens: (json['eco_tokens'] as num?)?.toInt() ?? 0,
+        nadhafaPoints: (json['nadhafa_points'] as num?)?.toInt() ?? 0,
       );
 }
 

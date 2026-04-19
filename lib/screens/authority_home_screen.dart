@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:gabeseye/theme/app_theme.dart';
 import 'package:gabeseye/models/models.dart';
@@ -42,6 +43,10 @@ class AuthorityHomeScreen extends StatelessWidget {
                 _buildPollutionMatrix(context, zones),
                 const SizedBox(height: 20),
                 _buildDroneCard(context, app),
+                const SizedBox(height: 16),
+                _buildDeadManSwitch(context, zones),
+                const SizedBox(height: 16),
+                _buildMissionTraceability(context, app),
                 const SizedBox(height: 20),
                 _buildQuickActions(context, app),
                 const SizedBox(height: 20),
@@ -240,6 +245,204 @@ class AuthorityHomeScreen extends StatelessWidget {
             Icon(Icons.chevron_right_rounded, color: c.textHint, size: 20),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildDeadManSwitch(BuildContext context, List<Zone> zones) {
+    final c = AdaptiveColors.of(context);
+    final maxSo2 = zones.isEmpty ? 0.0 : zones.map((z) => z.air.so2).reduce((a, b) => a > b ? a : b);
+    final triggered = maxSo2 >= 500;
+    final nearThreshold = maxSo2 >= 300;
+    final color = triggered ? AppColors.red : nearThreshold ? AppColors.orange : AppColors.green;
+    final now = DateTime.now();
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [color.withValues(alpha: 0.1), c.card],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: color.withValues(alpha: 0.4), width: triggered ? 1.5 : 1),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 40, height: 40,
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  triggered ? Icons.gpp_bad_rounded : Icons.gpp_good_rounded,
+                  color: color, size: 22,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Dead Man\'s Switch — SO₂',
+                        style: GoogleFonts.exo2(fontSize: 13, fontWeight: FontWeight.w700, color: c.textPrimary)),
+                    Text(
+                      triggered
+                          ? 'DÉCLENCHÉ — Notification ANPE envoyée'
+                          : nearThreshold
+                              ? 'SURVEILLANCE — Seuil approché'
+                              : 'Nominal — Sous le seuil d\'alerte',
+                      style: GoogleFonts.inter(fontSize: 12, color: color, fontWeight: FontWeight.w500),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          Row(
+            children: [
+              _So2Gauge(value: maxSo2, threshold: 500, color: color),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _DmsRow('SO₂ actuel', '${maxSo2.toInt()} µg/m³', color),
+                    _DmsRow('Seuil de déclenchement', '500 µg/m³', c.textSecondary),
+                    _DmsRow('Destinataire', 'ANPE · anpe@environnement.tn', AppColors.cyan),
+                    if (triggered)
+                      _DmsRow('Notifié le', DateFormat('d MMM yyyy HH:mm', 'fr').format(now), AppColors.orange),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          if (triggered) ...[
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: AppColors.red.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: AppColors.red.withValues(alpha: 0.3)),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.verified_rounded, color: AppColors.green, size: 14),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Smart contract verrouillé — preuve que l\'État a été prévenu et n\'a pas agi.',
+                      style: GoogleFonts.inter(fontSize: 11, color: c.textSecondary),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMissionTraceability(BuildContext context, AppProvider app) {
+    final c = AdaptiveColors.of(context);
+    final t = app.telemetry;
+    final now = DateTime.now();
+    final missions = [
+      (now.subtract(const Duration(hours: 2)), 'Oasis Chenini · Analyse sol', true, '0x3f8a…c21d'),
+      (now.subtract(const Duration(hours: 8)), 'Golfe de Gabès · Phosphates', true, '0xa14b…9e07'),
+      (now.subtract(const Duration(days: 1)), 'Zone GCT · SO₂ critique', true, '0x7c2f…11aa'),
+    ];
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: c.card,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.cyan.withValues(alpha: 0.25)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.receipt_long_rounded, color: AppColors.cyan, size: 18),
+              const SizedBox(width: 8),
+              Text('Smart Contract de Vol',
+                  style: GoogleFonts.exo2(fontSize: 13, fontWeight: FontWeight.w700, color: c.textPrimary)),
+              const Spacer(),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: AppColors.cyan.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text('VERROUILLÉ',
+                    style: GoogleFonts.exo2(fontSize: 9, fontWeight: FontWeight.w700, color: AppColors.cyan, letterSpacing: 1)),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Text('Chaque vol est signé au décollage et verrouillé à l\'atterrissage — données inaltérables.',
+              style: GoogleFonts.inter(fontSize: 11, color: c.textSecondary)),
+          const SizedBox(height: 14),
+          if (t.status == DroneStatus.enVol)
+            Container(
+              margin: const EdgeInsets.only(bottom: 12),
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: AppColors.green.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: AppColors.green.withValues(alpha: 0.3)),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.flight_takeoff_rounded, color: AppColors.green, size: 16),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Mission en cours · Contrat signé · ${t.missionActuelle}',
+                      style: GoogleFonts.exo2(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.green),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ...missions.map((m) => Padding(
+            padding: const EdgeInsets.only(bottom: 10),
+            child: Row(
+              children: [
+                Container(
+                  width: 28, height: 28,
+                  decoration: BoxDecoration(
+                    color: AppColors.green.withValues(alpha: 0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.lock_rounded, color: AppColors.green, size: 14),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(m.$2, style: GoogleFonts.inter(fontSize: 12, color: c.textPrimary, fontWeight: FontWeight.w500)),
+                      Text(DateFormat('d MMM · HH:mm', 'fr').format(m.$1),
+                          style: GoogleFonts.inter(fontSize: 11, color: c.textSecondary)),
+                    ],
+                  ),
+                ),
+                Text(m.$4, style: GoogleFonts.robotoMono(fontSize: 10, color: c.textHint)),
+              ],
+            ),
+          )),
+        ],
       ),
     );
   }
@@ -543,3 +746,77 @@ class _ZoneTile extends StatelessWidget {
     );
   }
 }
+
+class _So2Gauge extends StatelessWidget {
+  final double value;
+  final double threshold;
+  final Color color;
+  const _So2Gauge({required this.value, required this.threshold, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    final c = AdaptiveColors.of(context);
+    final progress = (value / threshold).clamp(0.0, 1.0);
+    return SizedBox(
+      width: 72,
+      height: 72,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          SizedBox(
+            width: 72, height: 72,
+            child: CircularProgressIndicator(
+              value: progress,
+              strokeWidth: 6,
+              backgroundColor: c.cardBorder,
+              valueColor: AlwaysStoppedAnimation<Color>(color),
+              strokeCap: StrokeCap.round,
+            ),
+          ),
+          Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text('${value.toInt()}',
+                  style: GoogleFonts.exo2(fontSize: 14, fontWeight: FontWeight.w800, color: color)),
+              Text('µg/m³',
+                  style: GoogleFonts.inter(fontSize: 9, color: color.withValues(alpha: 0.7))),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _DmsRow extends StatelessWidget {
+  final String label;
+  final String value;
+  final Color color;
+  const _DmsRow(this.label, this.value, this.color);
+
+  @override
+  Widget build(BuildContext context) {
+    final c = AdaptiveColors.of(context);
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 6),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            flex: 2,
+            child: Text(label,
+                style: GoogleFonts.inter(fontSize: 11, color: c.textSecondary)),
+          ),
+          Expanded(
+            flex: 3,
+            child: Text(value,
+                style: GoogleFonts.exo2(
+                    fontSize: 11, fontWeight: FontWeight.w600,
+                    color: color)),
+          ),
+        ],
+      ),
+    );
+  }
+}
+

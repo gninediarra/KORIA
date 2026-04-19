@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:gabeseye/theme/app_theme.dart';
 import 'package:gabeseye/models/models.dart';
@@ -37,6 +38,10 @@ class FishermanHomeScreen extends StatelessWidget {
                 const SizedBox(height: 20),
                 if (user.parcelle != null) _buildZonePecheCard(context, user),
                 if (user.parcelle != null) const SizedBox(height: 16),
+                if (user.parcelle != null) _buildHistoriqueEauCard(context, displayZones),
+                if (user.parcelle != null) const SizedBox(height: 16),
+                _buildPasseportZoneCard(context, user),
+                const SizedBox(height: 16),
                 _buildWaterOverview(context, displayZones),
                 const SizedBox(height: 16),
                 _buildWaterDetailRow(context, displayZones),
@@ -160,6 +165,206 @@ class FishermanHomeScreen extends StatelessWidget {
               ],
             ),
           ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHistoriqueEauCard(BuildContext context, List<Zone> zones) {
+    final c = AdaptiveColors.of(context);
+    const blockchain = AppColors.water;
+    final now = DateTime.now();
+    final snapshots = [
+      (now.subtract(const Duration(days: 0)),  zones.isNotEmpty ? zones.first.water.turbidite : 18.0,  'vert'),
+      (now.subtract(const Duration(days: 30)), zones.isNotEmpty ? zones.first.water.turbidite + 12 : 30.0, 'orange'),
+      (now.subtract(const Duration(days: 60)), zones.isNotEmpty ? zones.first.water.turbidite + 5 : 23.0,  'vert'),
+      (now.subtract(const Duration(days: 90)), zones.isNotEmpty ? zones.first.water.turbidite + 35 : 53.0, 'rouge'),
+    ];
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [blockchain.withValues(alpha: 0.07), c.card],
+          begin: Alignment.topLeft, end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: blockchain.withValues(alpha: 0.3)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.history_edu_rounded, color: blockchain, size: 18),
+              const SizedBox(width: 8),
+              Text('Historique Qualité Eau · Blockchain',
+                  style: GoogleFonts.exo2(fontSize: 13, fontWeight: FontWeight.w700, color: c.textPrimary)),
+              const Spacer(),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: blockchain.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text('IMMUABLE',
+                    style: GoogleFonts.exo2(fontSize: 9, fontWeight: FontWeight.w700, color: blockchain, letterSpacing: 1)),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Text('Chaque mesure est hashée — preuve horodatée contre la pollution industrielle.',
+              style: GoogleFonts.inter(fontSize: 11, color: c.textSecondary)),
+          const SizedBox(height: 14),
+          ...snapshots.map((snap) {
+            final color = snap.$3 == 'vert' ? AppColors.green : snap.$3 == 'orange' ? AppColors.orange : AppColors.red;
+            final hash = '0x${snap.$1.millisecondsSinceEpoch.toRadixString(16).substring(0, 8)}…';
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: Row(
+                children: [
+                  Column(children: [
+                    Container(width: 10, height: 10,
+                        decoration: BoxDecoration(color: color, shape: BoxShape.circle,
+                            boxShadow: [BoxShadow(color: color.withValues(alpha: 0.4), blurRadius: 4)])),
+                    if (snap != snapshots.last)
+                      Container(width: 1, height: 22, color: c.cardBorder),
+                  ]),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                            Text(DateFormat('d MMM yyyy', 'fr').format(snap.$1),
+                                style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600, color: c.textPrimary)),
+                            Text('Turbidité: ${snap.$2.toInt()} NTU',
+                                style: GoogleFonts.inter(fontSize: 11, color: c.textSecondary)),
+                          ]),
+                        ),
+                        Row(children: [
+                          const Icon(Icons.link_rounded, size: 11, color: AppColors.water),
+                          const SizedBox(width: 3),
+                          Text(hash, style: GoogleFonts.robotoMono(fontSize: 10, color: c.textHint)),
+                        ]),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }),
+          const SizedBox(height: 4),
+          Row(children: [
+            const Icon(Icons.verified_user_rounded, color: AppColors.green, size: 13),
+            const SizedBox(width: 6),
+            Text('Preuve juridique opposable · GabèsEye Blockchain',
+                style: GoogleFonts.inter(fontSize: 11, color: AppColors.green, fontWeight: FontWeight.w500)),
+          ]),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPasseportZoneCard(BuildContext context, AppUser user) {
+    final c = AdaptiveColors.of(context);
+    final pts = user.nadhafaPoints;
+    final unlocked = pts >= 1500;
+    const nadhafa = Color(0xFFFFAB00);
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: c.card,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: unlocked ? AppColors.green.withValues(alpha: 0.4) : c.cardBorder),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 40, height: 40,
+                decoration: BoxDecoration(
+                  color: (unlocked ? AppColors.green : nadhafa).withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(unlocked ? Icons.folder_open_rounded : Icons.lock_rounded,
+                    color: unlocked ? AppColors.green : nadhafa, size: 22),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Text('Passeport Zone de Pêche',
+                      style: GoogleFonts.exo2(fontSize: 14, fontWeight: FontWeight.w700, color: c.textPrimary)),
+                  Text(unlocked ? 'Rapport détaillé déverrouillé' : 'Rapport détaillé verrouillé',
+                      style: GoogleFonts.inter(fontSize: 12,
+                          color: unlocked ? AppColors.green : c.textSecondary)),
+                ]),
+              ),
+              if (unlocked) const Icon(Icons.verified_rounded, color: AppColors.green, size: 20),
+            ],
+          ),
+          const SizedBox(height: 14),
+          if (unlocked) ...[
+            _PecheRow(Icons.opacity_rounded,       AppColors.water,  'Phosphates (30j)', 'Courbe stable · moy. 2.1 mg/L'),
+            _PecheRow(Icons.thermostat_rounded,    AppColors.orange, 'Température eau',  '24.3°C — Zone favorable'),
+            _PecheRow(Icons.biotech_rounded,       AppColors.green,  'Biomasse estimée', 'Bonne — Secteur actif'),
+            _PecheRow(Icons.warning_amber_rounded, AppColors.red,    'Zones interdites', '1 secteur GCT fermé actuellement'),
+          ] else ...[
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: nadhafa.withValues(alpha: 0.06),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: nadhafa.withValues(alpha: 0.2)),
+              ),
+              child: Column(children: [
+                Row(children: [
+                  const Icon(Icons.blur_on_rounded, color: AppColors.cyan, size: 16),
+                  const SizedBox(width: 8),
+                  Text('Phosphates 30j, biomasse, zones interdites…',
+                      style: GoogleFonts.inter(fontSize: 12, color: c.textHint)),
+                ]),
+                const SizedBox(height: 12),
+                Row(children: [
+                  Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    Text('$pts / 1500 pts',
+                        style: GoogleFonts.exo2(fontSize: 13, fontWeight: FontWeight.w700, color: nadhafa)),
+                    const SizedBox(height: 4),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(4),
+                      child: LinearProgressIndicator(
+                        value: (pts / 1500).clamp(0.0, 1.0),
+                        backgroundColor: c.cardBorder,
+                        valueColor: const AlwaysStoppedAnimation<Color>(nadhafa),
+                        minHeight: 6,
+                      ),
+                    ),
+                  ])),
+                  const SizedBox(width: 14),
+                  GestureDetector(
+                    onTap: () => ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Paiement 10 TND → rapport déverrouillé',
+                          style: GoogleFonts.exo2(fontSize: 13)),
+                          backgroundColor: AppColors.green),
+                    ),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: AppColors.green.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: AppColors.green.withValues(alpha: 0.35)),
+                      ),
+                      child: Text('10 TND',
+                          style: GoogleFonts.exo2(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.green)),
+                    ),
+                  ),
+                ]),
+              ]),
+            ),
+          ],
         ],
       ),
     );
@@ -518,6 +723,44 @@ class _ZoneTile extends StatelessWidget {
             Icon(Icons.chevron_right_rounded, color: c.textHint, size: 18),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _PecheRow extends StatelessWidget {
+  final IconData icon;
+  final Color color;
+  final String label;
+  final String value;
+  const _PecheRow(this.icon, this.color, this.label, this.value);
+
+  @override
+  Widget build(BuildContext context) {
+    final c = AdaptiveColors.of(context);
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Row(
+        children: [
+          Container(
+            width: 32, height: 32,
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(icon, color: color, size: 16),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(label, style: GoogleFonts.inter(fontSize: 11, color: c.textSecondary)),
+                Text(value, style: GoogleFonts.exo2(fontSize: 13, fontWeight: FontWeight.w600, color: c.textPrimary)),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

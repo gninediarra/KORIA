@@ -13,6 +13,7 @@ import 'package:gabeseye/screens/map_screen.dart';
 import 'package:gabeseye/screens/alerts_screen.dart';
 import 'package:gabeseye/screens/reports_screen.dart';
 import 'package:gabeseye/screens/profile_screen.dart';
+import 'package:gabeseye/screens/points_screen.dart';
 
 class MainNavigation extends StatefulWidget {
   const MainNavigation({super.key});
@@ -34,6 +35,7 @@ class _MainNavigationState extends State<MainNavigation> {
           MapScreen(),
           AlertsScreen(),
           ReportsScreen(),
+          PointsScreen(),
           ProfileScreen(),
         ],
       ),
@@ -56,6 +58,7 @@ class _MainNavigationState extends State<MainNavigation> {
             onTap: (i) => setState(() => _currentIndex = i),
             backgroundColor: Colors.transparent,
             elevation: 0,
+            type: BottomNavigationBarType.fixed,
             items: [
               BottomNavigationBarItem(
                 icon: const Icon(Icons.dashboard_outlined),
@@ -116,6 +119,11 @@ class _MainNavigationState extends State<MainNavigation> {
                 icon: const Icon(Icons.bar_chart_outlined),
                 activeIcon: const Icon(Icons.bar_chart_rounded),
                 label: l('nav_reports'),
+              ),
+              BottomNavigationBarItem(
+                icon: const Icon(Icons.stars_outlined),
+                activeIcon: const Icon(Icons.stars_rounded),
+                label: 'Points',
               ),
               BottomNavigationBarItem(
                 icon: const Icon(Icons.person_outline_rounded),

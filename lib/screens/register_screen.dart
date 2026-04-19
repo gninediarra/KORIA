@@ -30,7 +30,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   // Set after successful registration
   String? _walletAddress;
-  int?    _ecoTokens;
+  int?    _nadhafaPoints;
 
   @override
   void dispose() {
@@ -109,7 +109,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
     setState(() {
       _walletAddress = result['wallet_address'] as String?;
-      _ecoTokens     = (result['eco_tokens'] as num?)?.toInt() ?? 10;
+      _nadhafaPoints     = (result['nadhafa_points'] as num?)?.toInt() ?? 100;
     });
   }
 
@@ -120,7 +120,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     if (_walletAddress != null) {
       return _SuccessScreen(
         walletAddress: _walletAddress!,
-        ecoTokens:     _ecoTokens ?? 10,
+        nadhafaPoints: _nadhafaPoints ?? 0,
         onBack:        () => Navigator.of(context).pop(),
       );
     }
@@ -205,7 +205,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
             const SizedBox(width: 10),
             Expanded(
               child: Text(
-                'Un portefeuille blockchain ECT est créé automatiquement à l\'inscription.',
+                'Une identité blockchain est créée pour certifier vos données environnementales.',
                 style: GoogleFonts.inter(fontSize: 12, color: AppColors.cyan),
               ),
             ),
@@ -336,10 +336,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Portefeuille ECT automatique',
+                  Text('Identité blockchain automatique',
                       style: GoogleFonts.exo2(fontSize: 13, fontWeight: FontWeight.w600, color: c.textPrimary)),
                   const SizedBox(height: 2),
-                  Text('Votre adresse Ethereum et 10 ECT de bienvenue seront générés.',
+                  Text('Votre adresse Ethereum sert de preuve horodatée pour vos données.',
                       style: GoogleFonts.inter(fontSize: 11, color: c.textSecondary)),
                 ],
               ),
@@ -460,12 +460,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
 class _SuccessScreen extends StatelessWidget {
   final String walletAddress;
-  final int ecoTokens;
+  final int nadhafaPoints;
   final VoidCallback onBack;
 
   const _SuccessScreen({
     required this.walletAddress,
-    required this.ecoTokens,
+    required this.nadhafaPoints,
     required this.onBack,
   });
 
@@ -520,7 +520,7 @@ class _SuccessScreen extends StatelessWidget {
                       children: [
                         const Icon(Icons.account_balance_wallet_outlined, color: AppColors.cyan, size: 16),
                         const SizedBox(width: 6),
-                        Text('Votre portefeuille ECT',
+                        Text('Preuve d\'identité blockchain',
                             style: GoogleFonts.exo2(
                                 fontSize: 12, fontWeight: FontWeight.w700,
                                 color: AppColors.cyan, letterSpacing: 0.8)),
@@ -544,9 +544,9 @@ class _SuccessScreen extends StatelessWidget {
                       ),
                       child: Row(
                         children: [
-                          const Icon(Icons.token_rounded, color: AppColors.green, size: 16),
+                          const Icon(Icons.stars_rounded, color: AppColors.green, size: 16),
                           const SizedBox(width: 8),
-                          Text('+$ecoTokens ECT — Bonus de bienvenue',
+                          Text('+$nadhafaPoints pts Nadhafa — Bonus de bienvenue',
                               style: GoogleFonts.exo2(
                                   fontSize: 13, fontWeight: FontWeight.w600,
                                   color: AppColors.green)),
@@ -558,7 +558,7 @@ class _SuccessScreen extends StatelessWidget {
               ),
               const SizedBox(height: 12),
               Text(
-                'Notez votre adresse wallet. Elle vous permettra d\'échanger vos Eco-Tokens.',
+                'Cette adresse certifie vos signalements environnementaux sur la blockchain GabèsEye.',
                 textAlign: TextAlign.center,
                 style: GoogleFonts.inter(fontSize: 12, color: c.textHint),
               ),

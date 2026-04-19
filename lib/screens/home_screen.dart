@@ -36,6 +36,8 @@ class HomeScreen extends StatelessWidget {
                 _buildStatRow(context, app, l),
                 const SizedBox(height: 20),
                 _buildDroneCard(context, app),
+                const SizedBox(height: 16),
+                _buildPartDeRespiration(context, user, app),
                 const SizedBox(height: 20),
                 _buildSectionHeader(context, l('home_recent_alerts'), Icons.notifications_outlined),
                 const SizedBox(height: 12),
@@ -359,6 +361,152 @@ class HomeScreen extends StatelessWidget {
             child: Text(
               l('home_no_alert'),
               style: Theme.of(context).textTheme.bodyMedium,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPartDeRespiration(BuildContext context, AppUser user, AppProvider app) {
+    final c = AdaptiveColors.of(context);
+    const cyan = AppColors.cyan;
+
+    final quartiers = [
+      (user.quartier ?? 'Votre quartier', 142, true),
+      ('Chott Salem', 118, false),
+      ('Chenini', 97, false),
+      ('Jara', 85, false),
+      ('Boulbaba', 61, false),
+    ];
+    final maxPts = quartiers.map((q) => q.$2).reduce((a, b) => a > b ? a : b);
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [cyan.withValues(alpha: 0.07), c.card],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: cyan.withValues(alpha: 0.3)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.emoji_events_rounded, color: cyan, size: 18),
+              const SizedBox(width: 8),
+              Text('Part de Respiration',
+                  style: GoogleFonts.exo2(fontSize: 13, fontWeight: FontWeight.w700, color: c.textPrimary)),
+              const Spacer(),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: cyan.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text('SEMAINE',
+                    style: GoogleFonts.exo2(fontSize: 9, fontWeight: FontWeight.w700, color: cyan, letterSpacing: 1)),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'Le quartier le plus vigilant obtient un survol drone prioritaire la semaine suivante.',
+            style: GoogleFonts.inter(fontSize: 11, color: c.textSecondary),
+          ),
+          const SizedBox(height: 14),
+          ...quartiers.asMap().entries.map((entry) {
+            final rank = entry.key + 1;
+            final q = entry.value;
+            final progress = q.$2 / maxPts;
+            final rankColor = rank == 1 ? const Color(0xFFFFD700) : rank == 2 ? const Color(0xFFC0C0C0) : rank == 3 ? const Color(0xFFCD7F32) : c.textHint;
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: Row(
+                children: [
+                  SizedBox(
+                    width: 24,
+                    child: Text(
+                      rank <= 3 ? ['🥇', '🥈', '🥉'][rank - 1] : '$rank.',
+                      style: GoogleFonts.exo2(fontSize: rank <= 3 ? 16 : 12, color: rankColor, fontWeight: FontWeight.w700),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Text(
+                              q.$1,
+                              style: GoogleFonts.inter(
+                                fontSize: 12,
+                                fontWeight: q.$3 ? FontWeight.w700 : FontWeight.w500,
+                                color: q.$3 ? cyan : c.textPrimary,
+                              ),
+                            ),
+                            if (q.$3) ...[
+                              const SizedBox(width: 6),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                                decoration: BoxDecoration(
+                                  color: cyan.withValues(alpha: 0.15),
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: Text('vous',
+                                    style: GoogleFonts.exo2(fontSize: 9, color: cyan, fontWeight: FontWeight.w700)),
+                              ),
+                            ],
+                          ],
+                        ),
+                        const SizedBox(height: 3),
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(4),
+                          child: LinearProgressIndicator(
+                            value: progress,
+                            backgroundColor: c.cardBorder,
+                            valueColor: AlwaysStoppedAnimation<Color>(rank == 1 ? cyan : c.textHint),
+                            minHeight: 5,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Text('${q.$2} pts',
+                      style: GoogleFonts.exo2(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          color: rank == 1 ? cyan : c.textSecondary)),
+                ],
+              ),
+            );
+          }),
+          const SizedBox(height: 6),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: const Color(0xFFFFD700).withValues(alpha: 0.08),
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: const Color(0xFFFFD700).withValues(alpha: 0.3)),
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.flight_rounded, color: Color(0xFFFFD700), size: 15),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Le gagnant décide : école, jardin public ou marché — le drone survole en priorité.',
+                    style: GoogleFonts.inter(fontSize: 11, color: c.textSecondary),
+                  ),
+                ),
+              ],
             ),
           ),
         ],
