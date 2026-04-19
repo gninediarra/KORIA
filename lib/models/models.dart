@@ -102,7 +102,7 @@ class AppUser {
 
 // ─── Zone ────────────────────────────────────────────────────────────────────
 
-enum ZoneType { industriel, portuaire, agricole, cotier, urbain, maritime }
+enum ZoneType { industriel, portuaire, agricole, cotier, urbain, maritime, oasis }
 
 extension ZoneTypeExt on ZoneType {
   String get label {
@@ -119,6 +119,8 @@ extension ZoneTypeExt on ZoneType {
         return 'Zone Urbaine';
       case ZoneType.maritime:
         return 'Zone Maritime';
+      case ZoneType.oasis:
+        return 'Oasis';
     }
   }
 }
@@ -260,6 +262,133 @@ class Zone {
           DateTime.tryParse(json['derniere_analyse'] as String? ?? '') ??
               DateTime.now(),
     );
+  }
+
+  /// Construit une Zone depuis le backend Mané (/zones + analyses séparées).
+  factory Zone.fromBackend(
+    Map<String, dynamic> z, {
+    Map<String, dynamic>? sol,
+    Map<String, dynamic>? eau,
+    Map<String, dynamic>? air,
+  }) {
+    // Centre : {lat, lon} ou center_lat/center_lng
+    LatLng center;
+    if (z['center'] is Map) {
+      final c = z['center'] as Map;
+      center = LatLng((c['lat'] as num).toDouble(), (c['lon'] as num).toDouble());
+    } else {
+      center = LatLng(
+        (z['center_lat'] as num? ?? 33.88).toDouble(),
+        (z['center_lng'] as num? ?? 10.0).toDouble(),
+      );
+    }
+
+    // Polygone depuis bbox [lon_min, lat_min, lon_max, lat_max]
+    List<LatLng> polygon = [];
+    if (z['bbox'] is List) {
+      final b = z['bbox'] as List;
+      final lonMin = (b[0] as num).toDouble();
+      final latMin = (b[1] as num).toDouble();
+      final lonMax = (b[2] as num).toDouble();
+      final latMax = (b[3] as num).toDouble();
+      polygon = [
+        LatLng(latMin, lonMin),
+        LatLng(latMax, lonMin),
+        LatLng(latMax, lonMax),
+        LatLng(latMin, lonMax),
+      ];
+    }
+
+    // Status depuis sol ou air
+    String status = 'vert';
+    if (sol != null) status = sol['status'] as String? ?? 'vert';
+    if (air != null) {
+      final airStatus = air['global_alert_level'] as String? ?? 'vert';
+      // Escalate si l'air est plus grave
+      if (airStatus == 'rouge' || (airStatus == 'orange' && status == 'vert')) {
+        status = airStatus;
+      }
+    }
+
+    // SoilReadings
+    final soilReadings = sol != null
+        ? SoilReadings(
+            salinite: (sol['indices']?['NDSI'] as num? ?? 0).toDouble() * 10,
+            ph: 7.0,
+            humidite: (sol['indices']?['NDWI'] as num? ?? 0).toDouble().abs() * 100,
+            contamination: (sol['contamination_pct'] as num? ?? 0).toDouble(),
+            etat: _solEtat(sol['status'] as String? ?? 'vert', sol['health_score']),
+          )
+        : const SoilReadings(salinite: 0, ph: 7, humidite: 0, contamination: 0, etat: '—');
+
+    // WaterReadings
+    final waterReadings = eau != null
+        ? WaterReadings(
+            turbidite: (eau['turbidite'] as num? ?? 0).toDouble(),
+            ph: 7.0,
+            phosphates: (eau['indices']?['NDCI'] as num? ?? 0).toDouble().abs() * 10,
+            temperature: 25.0,
+            etat: _eauEtat(eau['status'] as String? ?? 'vert', eau['turbidite']),
+          )
+        : const WaterReadings(turbidite: 0, ph: 7, phosphates: 0, temperature: 25, etat: '—');
+
+    // AirReadings
+    AirReadings airReadings;
+    List<String> recommandations = [];
+    DateTime derniereAnalyse = DateTime.now();
+    if (air != null) {
+      final aq = air['air_quality'] as Map<String, dynamic>? ?? {};
+      airReadings = AirReadings(
+        so2: (aq['so2'] as num? ?? 0).toDouble(),
+        h2s: 0,
+        nh3: 0,
+        pm25: (aq['pm25'] as num? ?? 0).toDouble(),
+        aqi: (aq['aqi'] as num? ?? 0).toInt(),
+        etat: aq['alert_level'] as String? ?? '—',
+      );
+      final rawRec = air['recommendations'] as List? ?? [];
+      recommandations = rawRec
+          .map((r) => (r['message'] ?? r.toString()).toString())
+          .toList();
+      derniereAnalyse =
+          DateTime.tryParse(air['timestamp'] as String? ?? '') ?? DateTime.now();
+    } else {
+      airReadings = const AirReadings(so2: 0, h2s: 0, nh3: 0, pm25: 0, aqi: 0, etat: '—');
+    }
+
+    return Zone(
+      id: z['id'] as String,
+      name: z['name'] as String,
+      type: ZoneType.values.firstWhere(
+        (e) => e.name == (z['type'] as String? ?? ''),
+        orElse: () {
+          final t = z['type'] as String? ?? '';
+          if (t == 'ville') return ZoneType.urbain;
+          if (t == 'mer') return ZoneType.maritime;
+          return ZoneType.urbain;
+        },
+      ),
+      status: status,
+      center: center,
+      polygon: polygon,
+      soil: soilReadings,
+      water: waterReadings,
+      air: airReadings,
+      recommandations: recommandations,
+      derniereAnalyse: derniereAnalyse,
+    );
+  }
+
+  static String _solEtat(String status, dynamic score) {
+    if (status == 'rouge') return 'Contamination critique';
+    if (status == 'orange') return 'Dégradation modérée';
+    return 'Sol en bon état';
+  }
+
+  static String _eauEtat(String status, dynamic turbidite) {
+    if (status == 'rouge') return 'Eau très polluée';
+    if (status == 'orange') return 'Turbidité élevée';
+    return 'Qualité acceptable';
   }
 }
 
@@ -456,4 +585,144 @@ class DroneTelemetry {
       distanceParcourue: distanceParcourue ?? this.distanceParcourue,
     );
   }
+}
+
+// ─── Analysis models (Mané backend) ─────────────────────────────────────────
+
+class SolAnalysis {
+  final String zoneId;
+  final double healthScore;
+  final double contaminationPct;
+  final double anomalyPct;
+  final String status;
+  final Map<String, double> indices;
+  final DateTime timestamp;
+
+  const SolAnalysis({
+    required this.zoneId,
+    required this.healthScore,
+    required this.contaminationPct,
+    required this.anomalyPct,
+    required this.status,
+    required this.indices,
+    required this.timestamp,
+  });
+
+  factory SolAnalysis.fromJson(Map<String, dynamic> j) => SolAnalysis(
+        zoneId: j['zone_id'] as String? ?? '',
+        healthScore: (j['health_score'] as num? ?? 0).toDouble(),
+        contaminationPct: (j['contamination_pct'] as num? ?? 0).toDouble(),
+        anomalyPct: (j['anomaly_pct'] as num? ?? 0).toDouble(),
+        status: j['status'] as String? ?? 'vert',
+        indices: {
+          for (final e in (j['indices'] as Map<String, dynamic>? ?? {}).entries)
+            e.key: (e.value as num? ?? 0).toDouble()
+        },
+        timestamp:
+            DateTime.tryParse(j['timestamp'] as String? ?? '') ?? DateTime.now(),
+      );
+}
+
+class EauAnalysis {
+  final String zoneId;
+  final double turbidite;
+  final double contaminationPct;
+  final String status;
+  final Map<String, double> indices;
+  final DateTime timestamp;
+
+  const EauAnalysis({
+    required this.zoneId,
+    required this.turbidite,
+    required this.contaminationPct,
+    required this.status,
+    required this.indices,
+    required this.timestamp,
+  });
+
+  factory EauAnalysis.fromJson(Map<String, dynamic> j) => EauAnalysis(
+        zoneId: j['zone_id'] as String? ?? '',
+        turbidite: (j['turbidite'] as num? ?? 0).toDouble(),
+        contaminationPct: (j['contamination_pct'] as num? ?? 0).toDouble(),
+        status: j['status'] as String? ?? 'vert',
+        indices: {
+          for (final e in (j['indices'] as Map<String, dynamic>? ?? {}).entries)
+            e.key: (e.value as num? ?? 0).toDouble()
+        },
+        timestamp:
+            DateTime.tryParse(j['timestamp'] as String? ?? '') ?? DateTime.now(),
+      );
+}
+
+class AirAnalysis {
+  final String zoneId;
+  final int aqi;
+  final String alertLevel;
+  final String globalAlertLevel;
+  final double so2;
+  final double pm25;
+  final double pm10;
+  final double temperature;
+  final double windSpeed;
+  final bool isCritical;
+  final List<Map<String, dynamic>> recommendations;
+  final DateTime timestamp;
+
+  const AirAnalysis({
+    required this.zoneId,
+    required this.aqi,
+    required this.alertLevel,
+    required this.globalAlertLevel,
+    required this.so2,
+    required this.pm25,
+    required this.pm10,
+    required this.temperature,
+    required this.windSpeed,
+    required this.isCritical,
+    required this.recommendations,
+    required this.timestamp,
+  });
+
+  factory AirAnalysis.fromJson(Map<String, dynamic> j) {
+    final aq = j['air_quality'] as Map<String, dynamic>? ?? {};
+    final meteo = j['meteo'] as Map<String, dynamic>? ?? {};
+    final ep = j['episode_prediction'] as Map<String, dynamic>? ?? {};
+    return AirAnalysis(
+      zoneId: j['zone_id'] as String? ?? '',
+      aqi: (aq['aqi'] as num? ?? 0).toInt(),
+      alertLevel: aq['alert_level'] as String? ?? '—',
+      globalAlertLevel: j['global_alert_level'] as String? ?? 'vert',
+      so2: (aq['so2'] as num? ?? 0).toDouble(),
+      pm25: (aq['pm25'] as num? ?? 0).toDouble(),
+      pm10: (aq['pm10'] as num? ?? 0).toDouble(),
+      temperature: (meteo['temperature'] as num? ?? 20).toDouble(),
+      windSpeed: (meteo['wind_speed'] as num? ?? 0).toDouble(),
+      isCritical: ep['is_critical'] as bool? ?? false,
+      recommendations: (j['recommendations'] as List? ?? [])
+          .cast<Map<String, dynamic>>(),
+      timestamp:
+          DateTime.tryParse(j['timestamp'] as String? ?? '') ?? DateTime.now(),
+    );
+  }
+}
+
+class PredictionPoint {
+  final String date;
+  final double value;
+  final double? lower;
+  final double? upper;
+
+  const PredictionPoint({
+    required this.date,
+    required this.value,
+    this.lower,
+    this.upper,
+  });
+
+  factory PredictionPoint.fromJson(Map<String, dynamic> j) => PredictionPoint(
+        date: j['date'] as String? ?? j['month'] as String? ?? '',
+        value: (j['value'] as num? ?? j['contamination_pct'] as num? ?? 0).toDouble(),
+        lower: (j['lower'] as num?)?.toDouble(),
+        upper: (j['upper'] as num?)?.toDouble(),
+      );
 }

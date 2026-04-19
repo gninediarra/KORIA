@@ -12,8 +12,9 @@ import 'package:gabeseye/screens/authority_home_screen.dart';
 import 'package:gabeseye/screens/map_screen.dart';
 import 'package:gabeseye/screens/alerts_screen.dart';
 import 'package:gabeseye/screens/reports_screen.dart';
-import 'package:gabeseye/screens/profile_screen.dart';
+import 'package:gabeseye/screens/ai_screen.dart';
 import 'package:gabeseye/screens/points_screen.dart';
+import 'package:gabeseye/screens/profile_screen.dart';
 
 class MainNavigation extends StatefulWidget {
   const MainNavigation({super.key});
@@ -26,17 +27,23 @@ class _MainNavigationState extends State<MainNavigation> {
   int _currentIndex = 0;
 
   @override
+  void initState() {
+    super.initState();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: IndexedStack(
         index: _currentIndex,
         children: const [
-          _RoleHome(),
-          MapScreen(),
-          AlertsScreen(),
-          ReportsScreen(),
-          PointsScreen(),
-          ProfileScreen(),
+          _RoleHome(),   // 0 — Dashboard
+          MapScreen(),   // 1 — Carte
+          AlertsScreen(), // 2 — Alertes
+          AiScreen(),    // 3 — IA
+          ReportsScreen(), // 4 — Rapports
+          PointsScreen(), // 5 — Points
+          ProfileScreen(), // 6 — Profil
         ],
       ),
       bottomNavigationBar: _buildBottomNav(context),
@@ -46,7 +53,7 @@ class _MainNavigationState extends State<MainNavigation> {
   Widget _buildBottomNav(BuildContext context) {
     final c = AdaptiveColors.of(context);
     return Consumer2<AppProvider, LocaleProvider>(
-      builder: (_, app, locale, _) {
+      builder: (_, app, locale, child) {
         final l = locale.t;
         return Container(
           decoration: BoxDecoration(
@@ -59,6 +66,9 @@ class _MainNavigationState extends State<MainNavigation> {
             backgroundColor: Colors.transparent,
             elevation: 0,
             type: BottomNavigationBarType.fixed,
+            selectedFontSize: 10,
+            unselectedFontSize: 10,
+            iconSize: 22,
             items: [
               BottomNavigationBarItem(
                 icon: const Icon(Icons.dashboard_outlined),
@@ -71,49 +81,15 @@ class _MainNavigationState extends State<MainNavigation> {
                 label: l('nav_map'),
               ),
               BottomNavigationBarItem(
-                icon: Stack(
-                  clipBehavior: Clip.none,
-                  children: [
-                    const Icon(Icons.notifications_outlined),
-                    if (app.unreadCount > 0)
-                      Positioned(
-                        right: -6,
-                        top: -4,
-                        child: Container(
-                          padding: const EdgeInsets.all(3),
-                          decoration: const BoxDecoration(
-                              color: AppColors.red, shape: BoxShape.circle),
-                          child: Text('${app.unreadCount}',
-                              style: const TextStyle(
-                                  fontSize: 9,
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold)),
-                        ),
-                      ),
-                  ],
-                ),
-                activeIcon: Stack(
-                  clipBehavior: Clip.none,
-                  children: [
-                    const Icon(Icons.notifications_rounded),
-                    if (app.unreadCount > 0)
-                      Positioned(
-                        right: -6,
-                        top: -4,
-                        child: Container(
-                          padding: const EdgeInsets.all(3),
-                          decoration: const BoxDecoration(
-                              color: AppColors.red, shape: BoxShape.circle),
-                          child: Text('${app.unreadCount}',
-                              style: const TextStyle(
-                                  fontSize: 9,
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold)),
-                        ),
-                      ),
-                  ],
-                ),
+                icon: _AlertIcon(count: app.unreadCount, active: false),
+                activeIcon: _AlertIcon(count: app.unreadCount, active: true),
                 label: l('nav_alerts'),
+              ),
+              // ── IA — tab central mis en avant ────────────────────────────
+              BottomNavigationBarItem(
+                icon: const Icon(Icons.psychology_outlined),
+                activeIcon: const Icon(Icons.psychology_rounded),
+                label: 'IA',
               ),
               BottomNavigationBarItem(
                 icon: const Icon(Icons.bar_chart_outlined),
@@ -134,6 +110,39 @@ class _MainNavigationState extends State<MainNavigation> {
           ),
         );
       },
+    );
+  }
+}
+
+class _AlertIcon extends StatelessWidget {
+  final int count;
+  final bool active;
+  const _AlertIcon({required this.count, required this.active});
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        Icon(active
+            ? Icons.notifications_rounded
+            : Icons.notifications_outlined),
+        if (count > 0)
+          Positioned(
+            right: -6,
+            top: -4,
+            child: Container(
+              padding: const EdgeInsets.all(3),
+              decoration: const BoxDecoration(
+                  color: AppColors.red, shape: BoxShape.circle),
+              child: Text('$count',
+                  style: const TextStyle(
+                      fontSize: 9,
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold)),
+            ),
+          ),
+      ],
     );
   }
 }

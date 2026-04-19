@@ -3,7 +3,14 @@
     "allow": [
       "Bash(flutter analyze *)",
       "Read(//d/h12/gabeseye-backend/app/services/**)",
-      "Read(//d/h12/gabeseye-backend/app/schemas/**)"
+      "Read(//d/h12/gabeseye-backend/app/schemas/**)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "Bash(venv/Scripts/pip install *)",
+      "Bash(venv/Scripts/python -c ' *)"
+    ],
+    "additionalDirectories": [
+      "D:\\h12\\gabeseye-backend\\app",
+      "D:\\h12\\gabeseye-backend"
     ]
   }
 }
