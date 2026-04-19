@@ -194,8 +194,20 @@ class _AiScreenState extends State<AiScreen> with TickerProviderStateMixin {
   Future<void> _sendWelcome() async {
     await Future.delayed(const Duration(milliseconds: 400));
     if (!mounted) return;
-    final config = _configFor(_role);
-    _addBot(config.welcomeText, speak: true);
+
+    setState(() => _loading = true);
+    _addBot('⏳ Chargement des données en direct...');
+
+    final res = await AiService.welcome(role: _role.name, langue: _langue);
+
+    if (!mounted) return;
+    setState(() {
+      _loading = false;
+      if (_msgs.isNotEmpty) _msgs.removeLast();
+    });
+    final wText = res.isError ? _configFor(_role).welcomeText : res.text;
+    _addBot(wText, speak: true);
+    if (!res.isError) _history.add({'role': 'assistant', 'content': wText});
   }
 
   void _addBot(String text, {bool speak = false}) {

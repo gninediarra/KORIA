@@ -7,6 +7,7 @@ import 'package:latlong2/latlong.dart';
 import 'package:gabeseye/theme/app_theme.dart';
 import 'package:gabeseye/models/models.dart';
 import 'package:gabeseye/providers/app_provider.dart';
+import 'package:gabeseye/services/api_service.dart';
 
 // ── Waypoints de la mission Gabès ─────────────────────────────────────────────
 

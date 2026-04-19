@@ -183,3 +183,30 @@ class AiResponse {
 
   factory AiResponse.error(String msg) => AiResponse(text: msg, isError: true);
 }
+
+  // ── Message de bienvenue avec données réelles ──────────────────────────────
+  // GET /agent/welcome?role=...&langue=...&zone_id=...
+  static Future<AiResponse> welcome({
+    String role = 'citoyen',
+    String langue = 'fr',
+    String zoneId = 'gct',
+  }) async {
+    try {
+      final uri = Uri.parse(
+        '$_base/agent/welcome?role=$role&langue=$langue&zone_id=$zoneId',
+      );
+      final res = await http
+          .get(uri, headers: _h)
+          .timeout(const Duration(seconds: 20));
+
+      if (res.statusCode == 200) {
+        return AiResponse.fromJson(
+            jsonDecode(utf8.decode(res.bodyBytes)) as Map<String, dynamic>);
+      }
+      return AiResponse.error('Erreur serveur (${res.statusCode})');
+    } on SocketException {
+      return AiResponse.error('Backend hors ligne.');
+    } catch (e) {
+      return AiResponse.error('Erreur: $e');
+    }
+  }
